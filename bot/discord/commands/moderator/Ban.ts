@@ -17,7 +17,7 @@ export const command = new SlashCommandBuilder()
             .setDescription("Reason for ban. This will be displayed to the user.")
             .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
 
 export async function execute(interaction: CommandInteraction) {
     if (!interaction.guild) {

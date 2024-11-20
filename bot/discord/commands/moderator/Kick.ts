@@ -17,7 +17,7 @@ export const command = new SlashCommandBuilder()
             .setDescription("Reason for kick. This will be displayed to the user.")
             .setRequired(true)
     )
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers);
 
 export async function execute(interaction: CommandInteraction) {
     if (!interaction.guild) {

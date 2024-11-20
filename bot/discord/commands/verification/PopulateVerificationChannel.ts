@@ -15,7 +15,7 @@ export async function hb_init() {
 const command = new SlashCommandBuilder()
     .setName('populate-verification-channel')
     .setDescription('Add verification buttons to `verification_info_channel_id`')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 async function execute(interaction: CommandInteraction) {
     if (!interaction.guildId) {
