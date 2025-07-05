@@ -27,8 +27,8 @@ if (!process.env.POCKETBASE_PASSWORD) {
 
 // Initialize discord.js client
 const client: Client = new Client({
-    intents: [GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.Guilds, GatewayIntentBits.GuildModeration, GatewayIntentBits.DirectMessages, GatewayIntentBits.AutoModerationExecution],
-    partials: [Partials.Channel, Partials.Message]
+    intents: [GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.Guilds, GatewayIntentBits.GuildModeration, GatewayIntentBits.DirectMessages, GatewayIntentBits.AutoModerationExecution],
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction]
 });
 await LoadAllModules();
 

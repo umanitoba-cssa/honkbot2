@@ -18,7 +18,7 @@ import type { ModMail } from "../models/ModMail";
 import AlumniVerificationLogEmbed from "../templates/embeds/AlumniVerificationLogEmbed";
 import ReVerificationLogEmbed from "../templates/embeds/ReVerificationLogEmbed";
 
-async function SendModLogEmbed(guild: Guild, embed: EmbedBuilder | undefined) {
+export async function SendModLogEmbed(guild: Guild, embed: EmbedBuilder | undefined) {
     if (!guild || !embed) {
         return;
     }
