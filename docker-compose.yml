@@ -1,0 +1,31 @@
+services:
+  honkbot:
+    container_name: bot
+    build:
+      context: ./bot/
+      dockerfile: ./Dockerfile
+    depends_on:
+      - pocketbase-db
+      - mysql
+
+  pocketbase-db:
+    container_name: moderation-db
+    build:
+      context: ./pocketbase-db/
+      dockerfile: ./Dockerfile
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - ./pocketbase-db/data:/pb/pb_data
+      
+  mysql:
+    container_name: message-db
+    restart: always
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: 'test_pass' # TODO: Change this
+      MYSQL_USER: 'test'
+      MYSQL_PASS: 'pass'
+    volumes:
+      - ./message-db/data:/var/lib/mysql
+
