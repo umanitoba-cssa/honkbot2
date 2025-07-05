@@ -13,6 +13,10 @@ RUN unzip /tmp/pb.zip -d /pb/
 # create data directory for databases
 RUN mkdir -p /pb/pb_data
 
+# copy startup script
+COPY start.sh /pb/start.sh
+RUN chmod +x /pb/start.sh
+
 # uncomment to copy the local pb_migrations dir into the image
 # COPY ./pb_migrations /pb/pb_migrations
 
@@ -24,5 +28,5 @@ EXPOSE 8080
 # create volume for persistent data storage
 VOLUME ["/pb/pb_data"]
 
-# start PocketBase with data directory specified
-CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080", "--dir=/pb/pb_data"]
+# start PocketBase with auto-admin setup
+CMD ["/pb/start.sh"]

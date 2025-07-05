@@ -7,6 +7,21 @@ services:
     depends_on:
       - pocketbase-db
       - mysql
+    environment:
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - POCKETBASE_HOST=http://moderation-db:8080
+      - POCKETBASE_EMAIL=${POCKETBASE_EMAIL}
+      - POCKETBASE_PASSWORD=${POCKETBASE_PASSWORD}
+      - MYSQL_HOST=message-db
+      - MYSQL_PORT=3306
+      - MYSQL_USER=test
+      - MYSQL_PASSWORD=pass
+      - MYSQL_ROOT_PASSWORD=test_pass
+      - BOT_ADMIN=${BOT_ADMIN}
+    networks:
+      - bot-network
 
   pocketbase-db:
     container_name: moderation-db
@@ -17,15 +32,31 @@ services:
       - "0.0.0.0:8080:8080"
     volumes:
       - ./pocketbase-db/data:/pb/pb_data
+    environment:
+      - POCKETBASE_ADMIN_EMAIL=${POCKETBASE_EMAIL}
+      - POCKETBASE_ADMIN_PASSWORD=${POCKETBASE_PASSWORD}
+    networks:
+      - bot-network
       
   mysql:
     container_name: message-db
     restart: always
-    image: mysql:latest
+    image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: 'test_pass' # TODO: Change this
+      MYSQL_ROOT_PASSWORD: 'test_pass'
+      MYSQL_DATABASE: 'honkbot'
       MYSQL_USER: 'test'
-      MYSQL_PASS: 'pass'
+      MYSQL_PASSWORD: 'pass'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
     volumes:
       - ./message-db/data:/var/lib/mysql
+      - ./message-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge
 
