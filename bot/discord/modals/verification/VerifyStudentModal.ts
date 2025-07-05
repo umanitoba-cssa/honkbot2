@@ -92,7 +92,7 @@ export module VerifyStudentModal {
         const year = interaction.fields.getTextInputValue("student-year");
         const studentNumber = interaction.fields.getTextInputValue("student-number");
 
-        if (!(email.endsWith("@myumanitoba.ca") || email.endsWith("@icmanitoba.ca"))) {
+        if (!(email.endsWith("@myumanitoba.ca") || email.endsWith("@icmanitoba.ca") || email.endsWith("@learning.icmanitoba.ca"))) {
             await interaction.editReply({
                 content: "Email must be a @myumanitoba.ca or @icmanitoba.ca email address."
             });

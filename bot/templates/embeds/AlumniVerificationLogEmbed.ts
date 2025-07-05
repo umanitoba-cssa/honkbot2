@@ -15,7 +15,7 @@ export default async function AlumniVerificationLogEmbed(client: Client, pending
     }
 
     const embed = new EmbedBuilder()
-        .setColor("#00ff00")
+        .setColor("#FF33E9")
         .setTitle("Alumni Pending Verification")
         .addFields(
             { name: "Name", value: pending.name, inline: true },
