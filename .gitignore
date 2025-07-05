@@ -1,2 +1,7 @@
-.env
 pocketbase/*
+.env
+
+# Database data directories
+pocketbase-db/data/
+message-db/data/
+.DS_Store
