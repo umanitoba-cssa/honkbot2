@@ -9,7 +9,7 @@ export async function hb_init() {
     RegisterCommand(command, execute);
     RegisterButtonHandler(Events.Button.VerifyStudent, handleVerifyStudent);
     RegisterButtonHandler(Events.Button.VerifyAlumni, handleVerifyAlumni);
-    RegisterButtonHandler(Events.Button.VerifyInstructor, handleVerifyInstructor);
+    // RegisterButtonHandler(Events.Button.VerifyInstructor, handleVerifyInstructor);
 }
 
 const command = new SlashCommandBuilder()
@@ -51,15 +51,15 @@ async function execute(interaction: CommandInteraction) {
         .setLabel('I am an Alumni')
         .setStyle(ButtonStyle.Primary);
 
-    const btnInstructor = new ButtonBuilder()
-        .setCustomId(Events.Button.VerifyInstructor)
-        .setLabel('I am an Instructor')
-        .setStyle(ButtonStyle.Secondary);
+    // const btnInstructor = new ButtonBuilder()
+    //     .setCustomId(Events.Button.VerifyInstructor)
+    //     .setLabel('I am an Instructor')
+    //     .setStyle(ButtonStyle.Secondary);
 
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         btnStudent,
         btnAlumni,
-        btnInstructor
+        // btnInstructor
     );
     
     verification_channel.send({
