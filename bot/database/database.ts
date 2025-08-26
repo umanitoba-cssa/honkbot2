@@ -354,3 +354,17 @@ export async function AddModMail(guild_id: string, target_user_id: string, issue
     }
     return await pb.collection("mod_mail").create(data);
 }
+
+export async function GetAllVerifiedStudents(guild_id: string): Promise<VerifiedUser[]> {
+    const pb = await getPb();
+    const verifiedStudents: VerifiedUser[] = await pb
+        .collection("verified_users")
+        .getFullList({ filter: `guild_id = "${guild_id}" && type = "student"` });
+
+    return verifiedStudents;
+}
+
+export async function RemoveVerifiedUser(id: string): Promise<void> {
+    const pb = await getPb();
+    await pb.collection("verified_users").delete(id);
+}
