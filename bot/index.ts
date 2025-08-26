@@ -25,6 +25,19 @@ if (!process.env.POCKETBASE_PASSWORD) {
     throw new Error("POCKETBASE_PASSWORD is not set");
 }
 
+// MySQL environment variables (for message logging)
+if (!process.env.MYSQL_HOST) {
+    console.warn("MYSQL_HOST is not set - message logging will be disabled");
+}
+
+if (!process.env.MYSQL_USER) {
+    console.warn("MYSQL_USER is not set - message logging will be disabled");
+}
+
+if (!process.env.MYSQL_PASSWORD) {
+    console.warn("MYSQL_PASSWORD is not set - message logging will be disabled");
+}
+
 // Initialize discord.js client
 const client: Client = new Client({
     intents: [GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.Guilds, GatewayIntentBits.GuildModeration, GatewayIntentBits.DirectMessages, GatewayIntentBits.AutoModerationExecution],

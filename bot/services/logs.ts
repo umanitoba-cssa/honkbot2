@@ -1,4 +1,4 @@
-import { EmbedBuilder, type CommandInteraction, type GuildMember, Client, Guild, ButtonBuilder, ActionRowBuilder, ButtonStyle, type MessageActionRowComponentBuilder } from "discord.js";
+import { EmbedBuilder, type CommandInteraction, type GuildMember, Client, Guild, ButtonBuilder, ActionRowBuilder, ButtonStyle, type MessageActionRowComponentBuilder, type ButtonInteraction } from "discord.js";
 import type { PendingVerification, VerifiedUser } from "../models/VerifiedUser";
 import type GuildSettings from "../models/GuildSettings";
 import { GetGuildSettings, GetVerifiedUser } from "../database/database";
@@ -65,8 +65,8 @@ async function SendModMailEmbed(guild: Guild, embed: EmbedBuilder | undefined) {
     await modMailChannel.send({ embeds: [embed] });
 }
 
-async function SendVerificationEmbed(guild: Guild, embed: EmbedBuilder | undefined) {
-    if (!guild || !embed) {
+async function SendVerificationEmbed(guild: Guild, embedOrMessage: EmbedBuilder | { embeds: EmbedBuilder[], components: ActionRowBuilder<ButtonBuilder>[] } | undefined) {
+    if (!guild || !embedOrMessage) {
         return;
     }
 
@@ -82,7 +82,13 @@ async function SendVerificationEmbed(guild: Guild, embed: EmbedBuilder | undefin
         return;
     }
 
-    await verificationLogChannel.send({ embeds: [embed] });
+    // Check if it's the new format with embeds and components
+    if ('embeds' in embedOrMessage && 'components' in embedOrMessage) {
+        await verificationLogChannel.send(embedOrMessage);
+    } else {
+        // Old format - just an embed
+        await verificationLogChannel.send({ embeds: [embedOrMessage] });
+    }
 }
 
 export async function LogBan(interaction: CommandInteraction, ban: Ban) {
@@ -132,7 +138,7 @@ export async function LogModMail(guild: Guild, modmail: ModMail) {
 }
 
 export async function LogVerification(
-    interaction: CommandInteraction,
+    interaction: CommandInteraction | ButtonInteraction,
     pending: PendingVerification
 ) {
     const guild = interaction.guild;
@@ -152,7 +158,7 @@ export async function LogReVerification(
 }
 
 export async function LogPendingVerification(
-    interaction: CommandInteraction,
+    interaction: CommandInteraction | ButtonInteraction,
     pending: PendingVerification
 ) {
     const guild = interaction.guild;

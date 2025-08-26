@@ -24,10 +24,12 @@ To learn more read the [Moderation Handbook](https://umanitobacssa.ca/docs/disco
    docker compose up -d
    ```
 
+4. **Set up the pocketbase admin account**
+   go to http://localhost:8080/_/ (or the ip of your remote server) and set up the account with the same credentails as your .env
+
 That's it! The setup script will automatically:
 - ✅ Build and start all Docker containers
 - ✅ Create MySQL database with proper schema
-- ✅ Auto-create PocketBase admin account
 - ✅ Configure all database connections
 
 ## Environment Variables
@@ -55,7 +57,6 @@ The bot uses two databases that are automatically configured:
 ### PocketBase (Moderation Database)
 - **Host**: `moderation-db:8080` (container name)
 - **Admin Panel**: http://localhost:8080/_/
-- **Auto-creates**: Admin account using `POCKETBASE_EMAIL` and `POCKETBASE_PASSWORD`
 
 ## Development Commands
 

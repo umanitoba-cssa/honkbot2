@@ -40,7 +40,13 @@ export function RegisterButtonHandler(id: Events.Button, handler: (interaction: 
 }
 
 export function GetButtonHandler(id: string): ((interaction: ButtonInteraction) => void) | undefined {
-    return _buttonHandlers.get(id);
+    // Exact match
+    if (_buttonHandlers.has(id)) return _buttonHandlers.get(id);
+    // Prefix match for parameterized IDs
+    for (const key of _buttonHandlers.keys()) {
+        if (id.startsWith(key)) return _buttonHandlers.get(key);
+    }
+    return undefined;
 }
 
 export async function LoadAllModules() {
@@ -51,6 +57,18 @@ export async function LoadAllModules() {
         const module = await import(filePath);
         if (module.hb_init) {
             console.log(`Loading module ${file}`);
+            await module.hb_init();
+        }
+    }
+
+    // Also load template modules that might have handlers
+    const templatesModulePath = path.join(import.meta.dir, '../templates');
+    const templatesModuleFiles = fs.readdirSync(templatesModulePath, {recursive: true, encoding: 'utf-8'}).filter(file => file.endsWith('.ts'));
+    for (const file of templatesModuleFiles) {
+        const filePath = path.join(templatesModulePath, file);
+        const module = await import(filePath);
+        if (module.hb_init) {
+            // console.log(`Loading template module ${file}`);
             await module.hb_init();
         }
     }

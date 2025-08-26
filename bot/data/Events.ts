@@ -3,6 +3,7 @@ export module Events {
         VerifyStudent = 'btn-verify-student',
         VerifyAlumni = 'btn-verify-alumni',
         VerifyInstructor = 'btn-verify-instructor',
+        ForceVerifyPending = 'btn-force-verify-pending',
     };
     
     export enum Modal {

@@ -4,6 +4,13 @@ import type { SQLCounters } from '../models/SQLCounters';
 import { MessageFlags } from 'discord.js';
 import type { SQLEditMessage } from '../models/SQLEditMessage';
 
+// Check if MySQL is configured
+const isMySQLConfigured = !!(process.env.MYSQL_HOST && process.env.MYSQL_USER && process.env.MYSQL_PASSWORD);
+
+if (!isMySQLConfigured) {
+    console.warn('MySQL not configured - message logging will be disabled');
+}
+
 // Connection cache for different guild databases
 const connectionCache = new Map<string, Connection>();
 
@@ -18,7 +25,11 @@ const baseAccess: ConnectionOptions = {
 }
 
 // Get or create connection for a specific guild
-async function getGuildConnection(guild_id: string): Promise<Connection> {
+async function getGuildConnection(guild_id: string): Promise<Connection | null> {
+    if (!isMySQLConfigured) {
+        return null;
+    }
+    
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
@@ -119,13 +130,17 @@ export async function SQLLogUserMessage(
     content: string,
     timestamp: number) {
     
-    if (!guild_id) {
-        throw new Error('Guild ID is required');
+    if (!isMySQLConfigured || !guild_id) {
+        return; // Skip if MySQL not configured or no guild ID
     }
 
     const date = new Date(timestamp);
     const mysqlDatetime = date.toISOString().slice(0, 19).replace('T', ' ');
     const connection = await getGuildConnection(guild_id);
+
+    if (!connection) {
+        return; // Skip if no connection
+    }
 
     await connection.execute(
         'INSERT INTO messages (channel_id, message_id, user_id, content, timestamp) VALUES (?, ?, ?, ?, ?)',
