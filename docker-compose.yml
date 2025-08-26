@@ -5,8 +5,10 @@ services:
       context: ./bot/
       dockerfile: ./Dockerfile
     depends_on:
-      - pocketbase-db
-      - mysql
+      pocketbase-db:
+        condition: service_healthy
+      mysql:
+        condition: service_started
     environment:
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
@@ -37,6 +39,12 @@ services:
       - POCKETBASE_ADMIN_PASSWORD=${POCKETBASE_PASSWORD}
     networks:
       - bot-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
       
   mysql:
     container_name: message-db

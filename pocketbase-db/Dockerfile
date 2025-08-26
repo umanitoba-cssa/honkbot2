@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-ARG PB_VERSION=0.26.3
+ARG PB_VERSION=0.20.3
 
 RUN apk add --no-cache \
     unzip \
@@ -29,4 +29,4 @@ EXPOSE 8080
 VOLUME ["/pb/pb_data"]
 
 # start PocketBase with auto-admin setup
-CMD ["/pb/start.sh"]
+CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080"]
