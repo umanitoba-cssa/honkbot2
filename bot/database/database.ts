@@ -118,13 +118,13 @@ export async function GetPendingVerification(id: string): Promise<PendingVerific
             .collection("pending_verifications")
             .getOne(id);
     } catch (error) {
-        console.warn(`Failed to fetch from pending_verifications: ${error}`);
+        console.warn(`WARN: Failed to fetch from pending_verifications: ${error}`);
         try {
             pendingVerification = await pb
                 .collection("pending_alumni_verifications")
                 .getOne(id);
         } catch (alumniError) {
-            console.error(`Failed to fetch from pending_alumni_verifications: ${alumniError}`);
+            console.error(`WARN: Failed to fetch from pending_alumni_verifications: ${alumniError}`);
         }
     }
 
