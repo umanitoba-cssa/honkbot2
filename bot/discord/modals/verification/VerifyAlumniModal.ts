@@ -6,7 +6,9 @@ import {
     TextInputStyle,
     ButtonInteraction,
     CommandInteraction,
-    ModalSubmitInteraction
+    ModalSubmitInteraction,
+    ButtonBuilder,
+    ButtonStyle
 } from "discord.js";
 import { RegisterModalHandler } from "../../../data/Registry";
 import { Events } from "../../../data/Events";
@@ -57,14 +59,14 @@ export module VerifyAlumniModal {
         const ar3 = new ActionRowBuilder<TextInputBuilder>().addComponents(programInput);
         const ar4 = new ActionRowBuilder<TextInputBuilder>().addComponents(yearInput);
 
-        modal.addComponents(ar1, ar2, ar3, ar4);
+                modal.addComponents(ar1, ar2, ar3, ar4);
 
         await interaction.showModal(modal);
     }
 
     export async function submit(interaction: ModalSubmitInteraction) {
         await interaction.reply({
-            content: "Submitting your verification request, please wait...",
+            content: "Processing your verification request...",
             ephemeral: true
         });
 
@@ -80,7 +82,6 @@ export module VerifyAlumniModal {
         const email = interaction.fields.getTextInputValue("contact-email");
         const program = interaction.fields.getTextInputValue("alumni-program");
         const year = interaction.fields.getTextInputValue("grad-year");
-
 
         // check if email format is valid
         if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
@@ -117,15 +118,23 @@ export module VerifyAlumniModal {
             return;
         }
 
+        // Show success message with immediate next step
+        const continueButton = new ButtonBuilder()
+            .setCustomId(Events.Button.SetPreferredName)
+            .setLabel("Set Your Preferred Name")
+            .setStyle(ButtonStyle.Primary);
+
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
+
         const response = [
-            `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command:`,
-            "```",
-            `/verify [code]`,
-            "```",
+            `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command: \n\n\`/verify [code]\`\n\n`,
             "- If you entered the wrong email address, please resubmit the verification form.",
             `- If you do not receive an email within 30 minutes, contact ${process.env.BOT_ADMIN} for assistance.`
         ].join("\n");
 
-        await interaction.editReply({ content: response });
+        await interaction.editReply({ 
+            content: response + "\n\n**Next Step:** As per our TOU and Rules members are required to put their preferred name as their server nickname. Please set your preferred name that will be used as your server nickname:",
+            components: [buttonRow]
+        });
     }
 }
