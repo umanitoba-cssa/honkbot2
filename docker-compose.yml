@@ -1,6 +1,7 @@
 services:
   honkbot:
     container_name: bot
+    restart: always
     build:
       context: ./bot/
       dockerfile: ./Dockerfile
@@ -8,7 +9,7 @@ services:
       pocketbase-db:
         condition: service_healthy
       mysql:
-        condition: service_started
+        condition: service_healthy
     environment:
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
@@ -27,6 +28,7 @@ services:
 
   pocketbase-db:
     container_name: moderation-db
+    restart: always
     build:
       context: ./pocketbase-db/
       dockerfile: ./Dockerfile
@@ -56,13 +58,20 @@ services:
       MYSQL_USER: 'test'
       MYSQL_PASSWORD: 'pass'
       MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+    command: --bind-address=0.0.0.0 --default-authentication-plugin=mysql_native_password
     volumes:
       - ./message-db/data:/var/lib/mysql
       - ./message-db/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "3306:3306"
+      - "0.0.0.0:3306:3306"
     networks:
       - bot-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "test", "-ppass"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 networks:
   bot-network:
