@@ -19,7 +19,7 @@ const baseAccess: ConnectionOptions = {
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
     host: process.env.MYSQL_HOST,
-    port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 33060,
+    port: process.env.MYSQL_PORT ? parseInt(process.env.MYSQL_PORT) : 3306,
     supportBigNumbers: true,
     bigNumberStrings: true
 }
@@ -159,6 +159,9 @@ export async function SQLGetUserMessage(
 
     try {
         const connection = await getGuildConnection(guild_id);
+        if (!connection) {
+            return null;
+        }
         const [rows] = await connection.query(
             'SELECT * FROM messages WHERE channel_id = ? AND message_id = ?', [channel_id, message_id]
         );
@@ -189,6 +192,9 @@ export async function SQLLogUserMessageEdit(
     const mysqlDatetime = date.toISOString().slice(0, 19).replace('T', ' ');
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE messages SET content = ?, timestamp = ? WHERE message_id = ?',
         [content, mysqlDatetime, message_id]
@@ -212,6 +218,9 @@ export async function SQLLogUserOriginalMessageEdit(
     const mysqlDatetime = date.toISOString().slice(0, 19).replace('T', ' ');
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     const [rows] = await connection.query(
         'SELECT * FROM message_edited WHERE channel_id = ? AND message_id = ? ORDER BY edit_number DESC LIMIT 1', 
         [channel_id, message_id]
@@ -248,6 +257,9 @@ export async function SQLLogUserMessageDelete(
     }
     
     const connection = await getGuildConnection(guild_id);
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'INSERT INTO message_deleted (channel_id, message_id, user_id, content, timestamp) VALUES (?, ?, ?, ?, ?)',
         [result.channel_id, result.message_id, result.user_id, result.content, result.timestamp]
@@ -267,6 +279,9 @@ export async function SQLLogUserRecieveReaction(
         await SQLGetUserCount(guild_id, user_id);
         const connection = await getGuildConnection(guild_id);
 
+        if (!connection) {
+            return null;
+        }
         await connection.execute(
             'UPDATE counters SET reactions_received = reactions_received + 1 WHERE user_id = ?',
             [user_id]
@@ -287,6 +302,9 @@ export async function SQLLogUserGiveReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET reactions_sent = reactions_sent + 1 WHERE user_id = ?',
         [user_id]
@@ -304,6 +322,9 @@ export async function SQLLogUserRemoveRecieveReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET reactions_received = reactions_received - 1 WHERE user_id = ?',
         [user_id]
@@ -321,6 +342,9 @@ export async function SQLLogUserRemoveGiveReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET reactions_sent = reactions_sent - 1 WHERE user_id = ?',
         [user_id]
@@ -338,6 +362,9 @@ export async function SQLLogUserRecieveThisTBHReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET thistbh_received = thistbh_received + 1 WHERE user_id = ?',
         [user_id]
@@ -355,6 +382,9 @@ export async function SQLLogUserGiveThisTBHReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET thistbh_sent = thistbh_sent + 1 WHERE user_id = ?',
         [user_id]
@@ -372,6 +402,9 @@ export async function SQLLogUserRemoveRecieveThisTBHReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET thistbh_received = thistbh_received - 1 WHERE user_id = ?',
         [user_id]
@@ -389,6 +422,9 @@ export async function SQLLogUserRemoveGiveThisTBHReaction(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET thistbh_sent = thistbh_sent - 1 WHERE user_id = ?',
         [user_id]
@@ -406,6 +442,9 @@ export async function SQLLogUserMessageCount(
     await SQLGetUserCount(guild_id, user_id);
     const connection = await getGuildConnection(guild_id);
 
+    if (!connection) {
+            return null;
+        }
     await connection.execute(
         'UPDATE counters SET message_count = message_count + 1 WHERE user_id = ?',
         [user_id]
@@ -423,6 +462,9 @@ export async function SQLGetUserCount(
 
     try {
         const connection = await getGuildConnection(guild_id);
+        if (!connection) {
+            return null;
+        }
         const [rows] = await connection.query(
             'SELECT * FROM counters WHERE user_id = ?', [user_id]
         );
