@@ -4,20 +4,20 @@ import { SQLGetUserMessage, SQLLogUserRemoveGiveReaction, SQLLogUserRemoveGiveTh
 export const name: Events = Events.MessageReactionRemove;
 
 export const execute = async (reaction: MessageReaction, user: GuildMember) => {
-    if (!user.user.bot) {
+    // Only process reactions in guild messages, not DMs, and not from bots
+    if (!user.user.bot && reaction.message.guildId) {
+        const message = await SQLGetUserMessage(reaction.message.guildId, reaction.message.channelId, reaction.message.id);    
 
-    const message = await SQLGetUserMessage(reaction.message.guildId, reaction.message.channelId, reaction.message.id);    
+        if (reaction.emoji.id === "1336040880112664597") {
+            SQLLogUserRemoveGiveThisTBHReaction(reaction.message.guildId, user.id);
+            if (message !== null) {
+                SQLLogUserRemoveRecieveThisTBHReaction(reaction.message.guildId, String(message.user_id));
+            }
+        }
 
-   if (reaction.emoji.id === "1336040880112664597") {
-    SQLLogUserRemoveGiveThisTBHReaction(reaction.message.guildId, user.id);
-    if (message !== null) {
-        SQLLogUserRemoveRecieveThisTBHReaction(reaction.message.guildId, String(message.user_id));
+        SQLLogUserRemoveGiveReaction(reaction.message.guildId, user.id);
+        if (message !== null) {
+            SQLLogUserRemoveRecieveReaction(reaction.message.guildId, String(message.user_id));
+        }
     }
-   }
-
-   SQLLogUserRemoveGiveReaction(reaction.message.guildId, user.id);
-   if (message !== null) {
-   SQLLogUserRemoveRecieveReaction(reaction.message.guildId, String(message.user_id));
-   }
-}
 };

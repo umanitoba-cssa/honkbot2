@@ -4,8 +4,9 @@ import { SQLLogUserMessage, SQLLogUserMessageCount } from "../database/message_d
 export const name: Events = Events.MessageCreate;
 
 export const execute = async (message: Message) => {
-    if (!message.author.bot) {
-    SQLLogUserMessage(message.guildId, message.channelId, message.id, message.author.id, message.content, message.createdTimestamp);
-    SQLLogUserMessageCount(message.guildId, message.author.id);
+    // Only log messages that are in a guild (not DMs) and not from bots
+    if (!message.author.bot && message.guildId) {
+        SQLLogUserMessage(message.guildId, message.channelId, message.id, message.author.id, message.content, message.createdTimestamp);
+        SQLLogUserMessageCount(message.guildId, message.author.id);
     }
 };
