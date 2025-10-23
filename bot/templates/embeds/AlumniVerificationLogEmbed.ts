@@ -1,4 +1,4 @@
-import { Client, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ButtonInteraction, PermissionFlagsBits } from "discord.js";
+import { Client, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, ButtonInteraction, PermissionFlagsBits, Message } from "discord.js";
 import type { PendingVerification } from "../../models/VerifiedUser";
 import { Events } from "../../data/Events";
 import { RegisterButtonHandler } from "../../data/Registry";
@@ -30,6 +30,21 @@ async function handleForceVerifyPending(interaction: ButtonInteraction) {
         await interaction.deferReply({ ephemeral: true });
 
         const request = await GetPendingVerification(pendingId);
+
+        if (request) {
+
+            const embed = new EmbedBuilder()
+                .setColor("#FF33E9")
+                .setTitle("Alumni Pending Verification")
+                .addFields(
+                    { name: "Name", value: request.name, inline: true },
+                    { name: "Handle", value: `<@${request.id}>`, inline: true },
+                    { name: "Type", value: request.type, inline: true }
+                )
+                .addFields({ name: "Email", value: request.email, inline: true });
+                
+            await (interaction.message as Message).edit({ components: [] })
+        }
 
         if (!request) {
             await interaction.editReply({ content: 'Verification record not found. It may have already been processed or expired.' });
