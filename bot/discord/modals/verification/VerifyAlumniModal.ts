@@ -8,7 +8,9 @@ import {
     CommandInteraction,
     ModalSubmitInteraction,
     ButtonBuilder,
-    ButtonStyle
+    ButtonStyle,
+    Message,
+    ComponentType
 } from "discord.js";
 import { RegisterModalHandler } from "../../../data/Registry";
 import { Events } from "../../../data/Events";
@@ -104,6 +106,52 @@ export module VerifyAlumniModal {
             yearNumber
         );
 
+        const continueButton = new ButtonBuilder()
+            .setCustomId(Events.Button.SetPreferredName)
+            .setLabel("Set Your Preferred Name")
+            .setStyle(ButtonStyle.Primary);
+
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
+
+        const response = [
+            "**Next Step:** As per our TOU and Rules members are required to put their preferred name as their server nickname. Please set your preferred name that will be used as your server nickname:",
+        ].join("\n");
+
+        const response2 = [
+            `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command: \n\n\`/verify [code]\`\n\n`,
+            "- If you entered the wrong email address, please resubmit the verification form.",
+            `- If you do not receive an email within 30 minutes, contact ${process.env.BOT_ADMIN} for assistance.`
+        ].join("\n");
+
+        const replyMsg = (await interaction.editReply({ 
+            content: response,
+            components: [buttonRow]
+        })) as Message;
+
+        try {
+            const nicknameButton = await replyMsg.awaitMessageComponent({
+                filter: (i) => i.user.id === userId && i.customId === Events.Button.SetPreferredName,
+                componentType: ComponentType.Button,
+                time: 2 * 60 * 1000 // 2 minutes
+            });
+
+            await nicknameButton.deferUpdate();
+
+            const disabledButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                ButtonBuilder.from(continueButton).setDisabled(true)
+            );
+            await interaction.editReply({ components: [disabledButton] });
+
+
+        } catch (err) {
+            console.log("VerifyStudentModal - error" + err);
+        }
+
+        await interaction.followUp({
+            content: response2,
+            ephemeral: true
+        })
+
         try {
             const name = await SendVerificationEmail(guildId, email, record.id);
             if (name) {
@@ -117,24 +165,5 @@ export module VerifyAlumniModal {
             });
             return;
         }
-
-        // Show success message with immediate next step
-        const continueButton = new ButtonBuilder()
-            .setCustomId(Events.Button.SetPreferredName)
-            .setLabel("Set Your Preferred Name")
-            .setStyle(ButtonStyle.Primary);
-
-        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
-
-        const response = [
-            `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command: \n\n\`/verify [code]\`\n\n`,
-            "- If you entered the wrong email address, please resubmit the verification form.",
-            `- If you do not receive an email within 30 minutes, contact ${process.env.BOT_ADMIN} for assistance.`
-        ].join("\n");
-
-        await interaction.editReply({ 
-            content: response + "\n\n**Next Step:** As per our TOU and Rules members are required to put their preferred name as their server nickname. Please set your preferred name that will be used as your server nickname:",
-            components: [buttonRow]
-        });
     }
 }
