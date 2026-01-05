@@ -120,7 +120,7 @@ export module VerifyAlumniModal {
         const response2 = [
             `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command: \n\n\`/verify [code]\`\n\n`,
             "- If you entered the wrong email address, please resubmit the verification form.",
-            `- If you do not receive an email within 30 minutes, contact ${process.env.BOT_ADMIN} for assistance.`
+            `- If you do not receive an email within 30 minutes, message the bot for assistance.`
         ].join("\n");
 
         const replyMsg = (await interaction.editReply({ 
@@ -161,7 +161,7 @@ export module VerifyAlumniModal {
             console.error(error);
             await interaction.editReply({
                 content:
-                    `There was an error while sending the verification email. Please contact ${process.env.BOT_ADMIN} for assistance.`
+                    `There was an error while sending the verification email. Please message the bot for assistance.`
             });
             return;
         }
