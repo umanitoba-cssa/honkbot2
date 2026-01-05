@@ -19,18 +19,17 @@ To learn more read the [Moderation Handbook](https://umanitobacssa.ca/docs/disco
    # Edit .env with your Discord bot credentials
    ```
 
-3. **Run the setup script**
+3. **Start the containers**
    ```bash
    docker compose up -d
    ```
+   *See [Development Commands](#development-commands) for more options for log viewing and rebuilding containers*
 
 4. **Set up the pocketbase admin account**
-   go to http://localhost:8080/_/ (or the ip of your remote server) and set up the account with the same credentails as your .env
+   
+   Go to http://localhost:8080/_/ (or the ip of your remote server) and set up the account with the same credentails as your .env
 
-That's it! The setup script will automatically:
-- ✅ Build and start all Docker containers
-- ✅ Create MySQL database with proper schema
-- ✅ Configure all database connections
+The bot will automatically build and start all docker containers, all database networking connections are configured through the created docker network, and it will also auto create the required databases for the first message sent in a discord server.
 
 ## Environment Variables
 
@@ -39,9 +38,8 @@ The following variables need to be set in your `.env` file:
 - `DISCORD_CLIENT_ID` - Your Discord application client ID
 - `DISCORD_GUILD_ID` - Your Discord server ID
 - `DISCORD_TOKEN` - Your Discord bot token
-- `POCKETBASE_EMAIL` - Email for PocketBase admin (auto-created)
-- `POCKETBASE_PASSWORD` - Password for PocketBase admin (auto-created)
-- `BOT_ADMIN` - Your Discord username for admin commands
+- `POCKETBASE_EMAIL` - Email for PocketBase admin
+- `POCKETBASE_PASSWORD` - Password for PocketBase admin
 
 ## Database Configuration
 
@@ -52,7 +50,6 @@ The bot uses two databases that are automatically configured:
 - **Port**: `3306`
 - **User**: `test`
 - **Password**: `pass`
-- **Auto-creates**: Separate database per Discord server using server ID
 
 ### PocketBase (Moderation Database)
 - **Host**: `moderation-db:8080` (container name)
