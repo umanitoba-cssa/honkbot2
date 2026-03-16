@@ -486,6 +486,39 @@ export async function SQLGetUserCount(
     }
 }
 
+export async function SQLUserLeaderboard(
+    guild_id: string | null,
+    datapoint: string): Promise<SQLCounters[]> {
+
+    if (!guild_id) {
+        throw new Error('Guild ID is required');
+    }
+
+    const allowedColumns = [
+        "reactions_sent", 
+        "reactions_received", 
+        "message_count", 
+        "thistbh_sent", 
+        "thistbh_received" 
+    ]
+
+    if (!allowedColumns.includes(datapoint)) {
+        throw new Error("Invalid leaderboard datapoint");
+    }
+
+    try {
+        const connection = await getGuildConnection(guild_id);
+        if (!connection) {
+            return [];
+        }
+        const [rows] = await connection.query(`SELECT user_id, ${datapoint} FROM counters ORDER BY ${datapoint} DESC`);
+        return rows as any as SQLCounters[];
+    } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+    }
+    return [];
+}
+
 // Clean up function to close all connections
 export async function closeDatabaseConnections(): Promise<void> {
     for (const [guildId, connection] of connectionCache) {
