@@ -219,13 +219,14 @@ export async function GetVerifiedUser(guild_id: string, user_id: string): Promis
     }
 }
 
-export async function AddUserWarning(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, strike: boolean): Promise<Warning> {
+export async function AddUserWarning(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, url: string | undefined, strike: boolean): Promise<Warning> {
     const pb = await getPb();
     const data = {
         guild_id,
         target_user_id,
         issuer_user_id,
         reason,
+        url,
         strike
     }
     return await pb.collection("warnings").create(data);
@@ -295,31 +296,33 @@ export async function GetStrikeCount(guild_id: string, target_user_id: string): 
     return warnings.length;
 }
 
-export async function AddUserBan(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, automatic: boolean): Promise<Ban> {
+export async function AddUserBan(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, url: string | undefined, automatic: boolean): Promise<Ban> {
     const pb = await getPb();
     const data = {
         guild_id,
         target_user_id,
         issuer_user_id,
         reason,
+        url,
         automatic
     }
     return await pb.collection("bans").create(data);
 }
 
-export async function AddUserKick(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, automatic: boolean): Promise<Kick> {
+export async function AddUserKick(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, url: string | undefined, automatic: boolean): Promise<Kick> {
     const pb = await getPb();
     const data = {
         guild_id,
         target_user_id,
         issuer_user_id,
         reason,
+        url,
         automatic
     }
     return await pb.collection("kicks").create(data);
 }
 
-export async function AddUserTimeout(guild_id: string, target_user_id: string, issuer_user_id: string, duration: number, reason: string, automatic: boolean): Promise<Timeout> {
+export async function AddUserTimeout(guild_id: string, target_user_id: string, issuer_user_id: string, duration: number, reason: string, url: string | undefined, automatic: boolean): Promise<Timeout> {
     const pb = await getPb();
     const data = {
         guild_id,
@@ -327,6 +330,7 @@ export async function AddUserTimeout(guild_id: string, target_user_id: string, i
         issuer_user_id,
         duration,
         reason,
+        url,
         automatic
     }
     return await pb.collection("timeouts").create(data);
