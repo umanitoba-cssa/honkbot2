@@ -27,7 +27,7 @@ To learn more read the [Moderation Handbook](https://umanitobacssa.ca/docs/disco
 
 4. **Set up the pocketbase admin account**
    
-   Go to http://localhost:8080/_/ (or the ip of your remote server) and set up the account with the same credentails as your .env
+   Go to http://localhost:8080/_/ (or the ip of your remote server) and set up the account with the same credentials as your .env
 
 The bot will automatically build and start all docker containers, all database networking connections are configured through the created docker network, and it will also auto create the required databases for the first message sent in a discord server.
 

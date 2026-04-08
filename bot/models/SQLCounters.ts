@@ -3,6 +3,6 @@ export interface SQLCounters {
 	reactions_sent: bigint
 	reactions_received: bigint
 	message_count: bigint
-	thistbh_recieved: bigint
-	thistbh_given: bigint
+	thistbh_received: bigint
+	thistbh_sent: bigint
 }

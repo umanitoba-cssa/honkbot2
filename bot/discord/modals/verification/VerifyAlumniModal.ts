@@ -144,7 +144,7 @@ export module VerifyAlumniModal {
 
 
         } catch (err) {
-            console.log("VerifyStudentModal - error" + err);
+            console.log("VerifyAlumniModal - error" + err);
         }
 
         await interaction.followUp({
