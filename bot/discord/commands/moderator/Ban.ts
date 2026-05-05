@@ -17,6 +17,12 @@ export const command = new SlashCommandBuilder()
             .setDescription("Reason for ban. This will be displayed to the user.")
             .setRequired(true)
     )
+    .addStringOption((option) =>
+        option
+            .setName("url")
+            .setDescription("URL to the message (optional)")
+            .setRequired(false)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
 
 export async function execute(interaction: CommandInteraction) {
@@ -31,6 +37,7 @@ export async function execute(interaction: CommandInteraction) {
     const issuer = interaction.member! as GuildMember;
     const target = interaction.options.get("user")!.member as GuildMember;
     const reason = interaction.options.get("reason")!.value as string;
+    const url = interaction.options.get("url")?.value as string | undefined;
     const dm = await target.createDM().catch(error => {
 	    console.log(error);
 	    return null;
@@ -40,7 +47,7 @@ export async function execute(interaction: CommandInteraction) {
 	    console.error(`Failed to send message to <@${target.id}>.`);
     }
 
-    const ban = await AddUserBan(guild.id, target.id, issuer.id, reason, false);
+    const ban = await AddUserBan(guild.id, target.id, issuer.id, reason, url, false);
     await LogBan(interaction, ban);
     target.ban({ reason: reason });
     let message = `

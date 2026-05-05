@@ -20,6 +20,12 @@ export const command = new SlashCommandBuilder()
     .addBooleanOption((option) =>
         option.setName("strike").setDescription("Record this warning as a formal strike").setRequired(true)
     )
+    .addStringOption((option) =>
+        option
+            .setName("url")
+            .setDescription("URL to the message (optional)")
+            .setRequired(false)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
 
 export async function execute(interaction: CommandInteraction) {
@@ -34,9 +40,10 @@ export async function execute(interaction: CommandInteraction) {
     const issuer = interaction.member! as GuildMember;
     const target = interaction.options.get("user")!.member as GuildMember;
     const reason = interaction.options.get("reason")!.value as string;
+    const url = interaction.options.get("url")?.value as string | undefined;
     const strike = interaction.options.get("strike")!.value as boolean;
 
-    const warn = await AddUserWarning(interaction.guild.id, target.id, issuer.id, reason, strike);
+    const warn = await AddUserWarning(interaction.guild.id, target.id, issuer.id, reason, url, strike);
     LogWarning(interaction, warn);
 
     if (strike) {

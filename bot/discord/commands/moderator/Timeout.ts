@@ -18,6 +18,12 @@ export const command = new SlashCommandBuilder()
             .setDescription("Reason for timeout. This will be displayed to the user.")
             .setRequired(true)
     )
+    .addStringOption((option) =>
+        option
+            .setName("url")
+            .setDescription("URL to the message (optional)")
+            .setRequired(false)
+    )
     .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers);
 
 export async function execute(interaction: CommandInteraction) {
@@ -32,11 +38,12 @@ export async function execute(interaction: CommandInteraction) {
     const issuer = interaction.member! as GuildMember;
     const target = interaction.options.get("user")!.member as GuildMember;
     const reason = interaction.options.get("reason")!.value as string;
+    const url = interaction.options.get("url")?.value as string | undefined;
     const duration = interaction.options.get("duration")!.value as number;
     const durationMilliseconds = duration * 1000 * 60;
     const dm = await target.createDM();
 
-    const ban = await AddUserTimeout(guild.id, target.id, issuer.id, duration, reason, false);
+    const ban = await AddUserTimeout(guild.id, target.id, issuer.id, duration, reason, url, false);
     await LogTimeout(interaction, ban);
     target.timeout(durationMilliseconds, reason);
     let message = `

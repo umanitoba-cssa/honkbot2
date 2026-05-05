@@ -25,6 +25,7 @@ export default async function BanLogEmbed(client: Client, kick: Kick) {
             { name: "Name", value: targetInfo?.name ?? "<not found>", inline: true },
             { name: "Handle", value: `<@${target.id}>`, inline: true },
             { name: "Reason", value: kick.reason, inline: false },
+            { name: "URL", value: kick.url ? kick.url : "None", inline: false },
             { name: "Automatically issued", value: kick.automatic ? "Yes" : "No", inline: true },
             { name: "Issued by", value: `<@${issuer.id}>`, inline: true }
         );

@@ -25,6 +25,7 @@ export default async function BanLogEmbed(client: Client, ban: Ban) {
             { name: "Name", value: targetInfo?.name ?? "<not found>", inline: true },
             { name: "Handle", value: `<@${target.id}>`, inline: true },
             { name: "Reason", value: ban.reason, inline: false },
+            { name: "URL", value: ban.url ? ban.url : "None", inline: false },
             { name: "Automatically issued", value: ban.automatic ? "Yes" : "No", inline: true },
             { name: "Issued by", value: `<@${issuer.id}>`, inline: true }
         );

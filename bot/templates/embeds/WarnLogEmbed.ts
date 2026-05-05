@@ -25,6 +25,7 @@ export default async function WarningLogEmbed(client: Client, warning: Warning) 
             { name: "Name", value: targetInfo?.name ?? "<not found>", inline: true },
             { name: "Handle", value: `<@${target.id}>`, inline: true },
             { name: "Reason", value: warning.reason, inline: false },
+            { name: "URL", value: warning.url ? warning.url : "None", inline: false },
             { name: "Strike", value: warning.strike ? "Yes" : "No", inline: true },
             { name: "Issued by", value: `<@${issuer.id}>`, inline: true }
         );
