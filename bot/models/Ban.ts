@@ -8,6 +8,5 @@ export interface Ban {
     target_user_id: string
     issuer_user_id: string
     reason: string
-    url?: string
     automatic: boolean
 }

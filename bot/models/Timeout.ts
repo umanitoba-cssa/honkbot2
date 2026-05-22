@@ -9,6 +9,5 @@ export interface Timeout {
     issuer_user_id: string
     duration: number
     reason: string
-    url?: string
     automatic: boolean
 }
