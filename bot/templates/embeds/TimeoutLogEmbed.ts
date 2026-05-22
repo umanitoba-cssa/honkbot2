@@ -25,7 +25,6 @@ export default async function timeoutLogEmbed(client: Client, timeout: Timeout) 
             { name: "Name", value: targetInfo?.name ?? "<not found>", inline: true },
             { name: "Handle", value: `<@${target.id}>`, inline: true },
             { name: "Reason", value: timeout.reason, inline: false },
-            { name: "URL", value: timeout.url ? timeout.url : "None", inline: false },
             { name: "Duration", value: timeout.duration.toString(), inline: true},
             { name: "Automatically issued", value: timeout.automatic ? "Yes" : "No", inline: true },
             { name: "Issued by", value: `<@${issuer.id}>`, inline: true }
