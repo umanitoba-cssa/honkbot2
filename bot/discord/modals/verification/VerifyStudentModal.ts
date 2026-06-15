@@ -148,10 +148,12 @@ export namespace VerifyStudentModal {
             `- If you do not receive an email within 30 minutes, message the bot for assistance.`
         ].join("\n");
 
-        const replyMsg = (await interaction.editReply({
+        await interaction.editReply({
             content: response,
             components: [buttonRow]
-        })) as Message;
+        })
+
+        const replyMsg = await interaction.fetchReply();
 
         try {
             const nicknameButton = await replyMsg.awaitMessageComponent({
