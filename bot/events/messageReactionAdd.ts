@@ -1,26 +1,29 @@
 import { SQLGetUserMessage, SQLLogUserGiveReaction, SQLLogUserGiveThisTBHReaction, SQLLogUserRecieveReaction, SQLLogUserRecieveThisTBHReaction } from "../database/message_database";
-import { Events, MessageReaction, User } from "discord.js";
+import { Events, MessageReaction, User, type PartialMessageReaction } from "discord.js";
 import type { PartialUser } from "discord.js";
 import type { SQLMessage } from "../models/SQLMessage";
 
 export const name: Events = Events.MessageReactionAdd;
 
-export const execute = async (reaction: MessageReaction, user: User | PartialUser) => {
+export const execute = async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
+    const resolvedReaction = reaction.partial ? await reaction.fetch().catch(() => null) : reaction;
+    if (!resolvedReaction) return;
+
     // Only process reactions in guild messages, not DMs, and not from bots
-    if (!user.bot && reaction.message.guildId) {
-        const message = await SQLGetUserMessage(reaction.message.guildId, reaction.message.channelId, reaction.message.id) as SQLMessage | null;
+    if (!user.bot && resolvedReaction.message.guildId) {
+        const message = await SQLGetUserMessage(resolvedReaction.message.guildId, resolvedReaction.message.channelId, resolvedReaction.message.id) as SQLMessage | null;
 
         if (message === null) {
             console.log("Message not found in the database.");
             return;
         }
 
-        if (reaction.emoji.id === "1336040880112664597") {
-            await SQLLogUserGiveThisTBHReaction(reaction.message.guildId, user.id);
-            await SQLLogUserRecieveThisTBHReaction(reaction.message.guildId, message.user_id);
+        if (resolvedReaction.emoji.id === "1336040880112664597") {
+            await SQLLogUserGiveThisTBHReaction(resolvedReaction.message.guildId, user.id);
+            await SQLLogUserRecieveThisTBHReaction(resolvedReaction.message.guildId, message.user_id);
         }
 
-        await SQLLogUserGiveReaction(reaction.message.guildId, user.id);
-        await SQLLogUserRecieveReaction(reaction.message.guildId, message.user_id);
+        await SQLLogUserGiveReaction(resolvedReaction.message.guildId, user.id);
+        await SQLLogUserRecieveReaction(resolvedReaction.message.guildId, message.user_id);
     }
 };

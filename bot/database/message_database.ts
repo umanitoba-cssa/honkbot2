@@ -161,22 +161,23 @@ export async function SQLGetUserMessage(
         if (!connection) {
             throw new Error("SQL DB Connection Missing")
         }
-        const rows = await connection.query(
-            'SELECT * FROM messages WHERE channel_id = ? AND message_id = ?', [channel_id, message_id]
+        const [rows] = await connection.query<any[]>(
+            'SELECT * FROM messages WHERE channel_id = ? AND message_id = ?',
+            [channel_id, message_id]
         );
 
-        if (!Array.isArray(rows)) {
+        const row = (rows as any[])[0];
+        if (!row) {
             return null;
         }
 
-        const message: SQLMessage = (rows as any[]).map(r => ({
-            channel_id: r['channel_id'] || <unknown>(r.channel_id),
-            message_id: r['message_id'],
-            user_id: r['user_id'],
-            content: r['content'],
-            timestamp: new Date(r.timestamp),
-        }))[0] ?? null;
-        return message;
+        return {
+            channel_id: String(row.channel_id),
+            message_id: String(row.message_id),
+            user_id: String(row.user_id),
+            content: row.content ?? '',
+            timestamp: new Date(row.timestamp),
+        };
     } catch (error) {
         console.error('Error fetching message:', error);
         return null;

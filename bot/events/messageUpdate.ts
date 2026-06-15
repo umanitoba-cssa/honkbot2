@@ -13,7 +13,7 @@ export const execute = async (oldMessage: Message | PartialMessage, newMessage: 
     }
 
     if (!resolvedNewMessage.author.bot && resolvedNewMessage.guildId) {
-        if (oldMessage.content !== newMessage.content) {
+        if (resolvedOldMessage.content !== resolvedNewMessage.content) {
             if (resolvedNewMessage.guild) {
                 const sql_message = await SQLGetUserMessage(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id);
                 if (sql_message !== null) {
