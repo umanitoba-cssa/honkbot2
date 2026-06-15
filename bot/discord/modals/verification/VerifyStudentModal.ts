@@ -148,15 +148,23 @@ export namespace VerifyStudentModal {
             `- If you do not receive an email within 30 minutes, message the bot for assistance.`
         ].join("\n");
 
-        await interaction.editReply({
-            content: response,
-            components: [buttonRow]
-        })
+        const replyMsg = await interaction.fetchReply();
 
-        await interaction.followUp({
-            content: response2,
-            ephemeral: true
-        })
+        try {
+            const nicknameButton = await replyMsg.awaitMessageComponent({
+                filter: (i) => i.user.id === userId && i.customId === Events.Button.SetPreferredName,
+                componentType: ComponentType.Button,
+                time: 2 * 60 * 1000 // 2 minutes
+            });
+            await nicknameButton.deferUpdate();
+
+            const disabledButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
+                ButtonBuilder.from(continueButton).setDisabled(true)
+            );
+            await interaction.editReply({ components: [disabledButton] });
+        } catch (err) {
+            console.log("VerifyStudentModal - error" + err);
+        }
 
         try {
             const name = await SendVerificationEmail(guildId, email, record.id);
