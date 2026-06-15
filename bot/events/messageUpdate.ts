@@ -1,27 +1,30 @@
-import { Message, Events } from "discord.js";
+import { Message, Events, type PartialMessage } from "discord.js";
 import { SQLLogUserMessageEdit, SQLLogUserOriginalMessageEdit, SQLGetUserMessage } from "../database/message_database";
 import { SendModLogEmbed } from "../services/logs";
 import MessageEditedEmbed from "../templates/embeds/MessageEditedEmbed";
 
 export const name: Events = Events.MessageUpdate;
 
-export const execute = async (oldMessage: Message, newMessage: Message) => {
-    // Only process guild messages, not DMs, and not from bots
-    if (!newMessage.author.bot && newMessage.guildId) {
-        if (newMessage.guild) {
-            const sql_message = await SQLGetUserMessage(newMessage.guildId, newMessage.channelId, newMessage.id);
-            if (sql_message !== null) {
-                SendModLogEmbed(newMessage.guild, await MessageEditedEmbed(newMessage.client, sql_message, newMessage));
-            }
-        }
+export const execute = async (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
+    const resolvedOldMessage = oldMessage.partial ? await oldMessage.fetch().catch(() => null) : oldMessage;
+    const resolvedNewMessage = newMessage.partial ? await newMessage.fetch().catch(() => null) : newMessage;
+    if (!resolvedOldMessage || !resolvedNewMessage) {
+        return;
+    }
 
+    if (!resolvedNewMessage.author.bot && resolvedNewMessage.guildId) {
         if (oldMessage.content !== newMessage.content) {
-            if (newMessage.editedTimestamp === null) {
-                newMessage.editedTimestamp = Date.now();
+            if (resolvedNewMessage.guild) {
+                const sql_message = await SQLGetUserMessage(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id);
+                if (sql_message !== null) {
+                    SendModLogEmbed(resolvedNewMessage.guild, await MessageEditedEmbed(resolvedNewMessage.client, sql_message, resolvedNewMessage))
+                }
             }
+            
+            const editedTimestamp = resolvedNewMessage.editedTimestamp ?? Date.now()
 
-            SQLLogUserOriginalMessageEdit(newMessage.guildId, newMessage.channelId, newMessage.id, newMessage.author.id, oldMessage.content, newMessage.content, oldMessage.createdTimestamp);
-            SQLLogUserMessageEdit(newMessage.guildId, newMessage.channelId, newMessage.id, newMessage.author.id, newMessage.content, newMessage.editedTimestamp);
+            SQLLogUserOriginalMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedOldMessage.content, resolvedNewMessage.content, resolvedOldMessage.createdTimestamp);
+            SQLLogUserMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedNewMessage.content, editedTimestamp);
         }
     }
 };

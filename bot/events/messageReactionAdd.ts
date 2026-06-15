@@ -1,12 +1,13 @@
 import { SQLGetUserMessage, SQLLogUserGiveReaction, SQLLogUserGiveThisTBHReaction, SQLLogUserRecieveReaction, SQLLogUserRecieveThisTBHReaction } from "../database/message_database";
-import { Events, MessageReaction, GuildMember } from "discord.js";
+import { Events, MessageReaction, User } from "discord.js";
+import type { PartialUser } from "discord.js";
 import type { SQLMessage } from "../models/SQLMessage";
 
 export const name: Events = Events.MessageReactionAdd;
 
-export const execute = async (reaction: MessageReaction, user: GuildMember) => {
+export const execute = async (reaction: MessageReaction, user: User | PartialUser) => {
     // Only process reactions in guild messages, not DMs, and not from bots
-    if (!user.user.bot && reaction.message.guildId) {
+    if (!user.bot && reaction.message.guildId) {
         const message = await SQLGetUserMessage(reaction.message.guildId, reaction.message.channelId, reaction.message.id) as SQLMessage | null;
 
         if (message === null) {
