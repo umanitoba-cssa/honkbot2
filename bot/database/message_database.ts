@@ -139,8 +139,8 @@ export async function SQLLogUserMessage(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-        return; // Skip if no connection
-    }
+            throw new Error("SQL DB Connection Missing")
+        }
 
     await connection.execute(
         'INSERT INTO messages (channel_id, message_id, user_id, content, timestamp) VALUES (?, ?, ?, ?, ?)',
@@ -160,15 +160,23 @@ export async function SQLGetUserMessage(
     try {
         const connection = await getGuildConnection(guild_id);
         if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
-        const [rows] = await connection.query(
+        const rows = await connection.query(
             'SELECT * FROM messages WHERE channel_id = ? AND message_id = ?', [channel_id, message_id]
         );
-        if ([rows].length === 0) {
+
+        if (!Array.isArray(rows)) {
             return null;
         }
-        const message: SQLMessage = (rows as any)[0] as SQLMessage;
+
+        const message: SQLMessage = (rows as any[]).map(r => ({
+            channel_id: r['channel_id'] || <unknown>(r.channel_id),
+            message_id: r['message_id'],
+            user_id: r['user_id'],
+            content: r['content'],
+            timestamp: new Date(r.timestamp),
+        }))[0] ?? null;
         return message;
     } catch (error) {
         console.error('Error fetching message:', error);
@@ -193,7 +201,7 @@ export async function SQLLogUserMessageEdit(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE messages SET content = ?, timestamp = ? WHERE message_id = ?',
@@ -221,20 +229,22 @@ export async function SQLLogUserOriginalMessageEdit(
     if (!connection) {
             return null;
         }
-    const [rows] = await connection.query(
+    let results = await connection.query(
         'SELECT * FROM message_edited WHERE channel_id = ? AND message_id = ? ORDER BY edit_number DESC LIMIT 1', 
         [channel_id, message_id]
     );
     
+    if (!results || Array.isArray(results) && [results].length === 0) {
+        return null;
+    }
+
     let old_content_db = old_content
     let edit_id = 0;
-    if ([rows].length > 0) {
-        const editedmessage: SQLEditMessage = (rows as any)[0] as SQLEditMessage;
+    const editedmessage: SQLEditMessage = (results as any)[0] as SQLEditMessage;
         if (editedmessage && typeof editedmessage.edit_number === 'number') {
             edit_id = editedmessage.edit_number + 1;
             old_content_db = editedmessage.new_content;
         }
-    }
 
     await connection.execute(
         'INSERT INTO message_edited (channel_id, message_id, edit_number, user_id, old_content, new_content, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -323,7 +333,7 @@ export async function SQLLogUserRemoveRecieveReaction(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE counters SET reactions_received = reactions_received - 1 WHERE user_id = ?',
@@ -363,7 +373,7 @@ export async function SQLLogUserRecieveThisTBHReaction(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE counters SET thistbh_received = thistbh_received + 1 WHERE user_id = ?',
@@ -383,7 +393,7 @@ export async function SQLLogUserGiveThisTBHReaction(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE counters SET thistbh_sent = thistbh_sent + 1 WHERE user_id = ?',
@@ -403,7 +413,7 @@ export async function SQLLogUserRemoveRecieveThisTBHReaction(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE counters SET thistbh_received = thistbh_received - 1 WHERE user_id = ?',
@@ -423,7 +433,7 @@ export async function SQLLogUserRemoveGiveThisTBHReaction(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE counters SET thistbh_sent = thistbh_sent - 1 WHERE user_id = ?',
@@ -443,7 +453,7 @@ export async function SQLLogUserMessageCount(
     const connection = await getGuildConnection(guild_id);
 
     if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
     await connection.execute(
         'UPDATE counters SET message_count = message_count + 1 WHERE user_id = ?',
@@ -463,7 +473,7 @@ export async function SQLGetUserCount(
     try {
         const connection = await getGuildConnection(guild_id);
         if (!connection) {
-            return null;
+            throw new Error("SQL DB Connection Missing")
         }
         const [rows] = await connection.query(
             'SELECT * FROM counters WHERE user_id = ?', [user_id]
