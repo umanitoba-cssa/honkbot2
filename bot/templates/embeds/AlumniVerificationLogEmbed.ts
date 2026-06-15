@@ -32,17 +32,6 @@ async function handleForceVerifyPending(interaction: ButtonInteraction) {
         const request = await GetPendingVerification(pendingId);
 
         if (request) {
-
-            const embed = new EmbedBuilder()
-                .setColor("#FF33E9")
-                .setTitle("Alumni Pending Verification")
-                .addFields(
-                    { name: "Name", value: request.name, inline: true },
-                    { name: "Handle", value: `<@${request.id}>`, inline: true },
-                    { name: "Type", value: request.type, inline: true }
-                )
-                .addFields({ name: "Email", value: request.email, inline: true });
-                
             await (interaction.message as Message).edit({ components: [] })
         }
 
