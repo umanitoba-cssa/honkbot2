@@ -1,7 +1,6 @@
 import mysql, { type ConnectionOptions, type Connection } from 'mysql2/promise';
 import type { SQLMessage } from '../models/SQLMessage';
 import type { SQLCounters } from '../models/SQLCounters';
-import { MessageFlags } from 'discord.js';
 import type { SQLEditMessage } from '../models/SQLEditMessage';
 
 // Check if MySQL is configured
@@ -234,17 +233,18 @@ export async function SQLLogUserOriginalMessageEdit(
         [channel_id, message_id]
     );
     
-    if (!results || Array.isArray(results) && [results].length === 0) {
+    const rows = (results as any)[0] as SQLEditMessage[];
+    if (!rows || rows.length === 0) {
         return null;
     }
 
-    let old_content_db = old_content
+    let old_content_db = old_content;
     let edit_id = 0;
-    const editedmessage: SQLEditMessage = (results as any)[0] as SQLEditMessage;
-        if (editedmessage && typeof editedmessage.edit_number === 'number') {
-            edit_id = editedmessage.edit_number + 1;
-            old_content_db = editedmessage.new_content;
-        }
+    const editedmessage = rows[0];
+    if (editedmessage && typeof editedmessage.edit_number === 'number') {
+        edit_id = editedmessage.edit_number + 1;
+        old_content_db = editedmessage.new_content;
+    }
 
     await connection.execute(
         'INSERT INTO message_edited (channel_id, message_id, edit_number, user_id, old_content, new_content, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
