@@ -17,14 +17,14 @@ export const execute = async (oldMessage: Message | PartialMessage, newMessage: 
             if (resolvedNewMessage.guild) {
                 const sql_message = await SQLGetUserMessage(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id);
                 if (sql_message !== null) {
-                    SendModLogEmbed(resolvedNewMessage.guild, await MessageEditedEmbed(resolvedNewMessage.client, sql_message, resolvedNewMessage))
+                    await SendModLogEmbed(resolvedNewMessage.guild, await MessageEditedEmbed(resolvedNewMessage.client, sql_message, resolvedNewMessage))
                 }
             }
             
             const editedTimestamp = resolvedNewMessage.editedTimestamp ?? Date.now()
 
-            SQLLogUserOriginalMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedOldMessage.content, resolvedNewMessage.content, resolvedOldMessage.createdTimestamp);
-            SQLLogUserMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedNewMessage.content, editedTimestamp);
+            await SQLLogUserOriginalMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedOldMessage.content, resolvedNewMessage.content, resolvedOldMessage.createdTimestamp);
+            await SQLLogUserMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedNewMessage.content, editedTimestamp);
         }
     }
 };
