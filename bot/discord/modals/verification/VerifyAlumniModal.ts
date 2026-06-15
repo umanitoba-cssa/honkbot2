@@ -21,7 +21,7 @@ export async function hb_init() {
     RegisterModalHandler(Events.Modal.VerifyAlumniModal, VerifyAlumniModal.submit);
 }
 
-export module VerifyAlumniModal {
+export namespace VerifyAlumniModal {
     export async function show(interaction: ButtonInteraction | CommandInteraction) {
         const modal = new ModalBuilder()
             .setCustomId(Events.Modal.VerifyAlumniModal)
@@ -147,11 +147,6 @@ export module VerifyAlumniModal {
             console.log("VerifyAlumniModal - error" + err);
         }
 
-        await interaction.followUp({
-            content: response2,
-            ephemeral: true
-        })
-
         try {
             const name = await SendVerificationEmail(guildId, email, record.id);
             if (name) {
@@ -165,5 +160,10 @@ export module VerifyAlumniModal {
             });
             return;
         }
+
+        await interaction.followUp({
+            content: response2,
+            ephemeral: true
+        })
     }
 }

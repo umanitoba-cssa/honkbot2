@@ -15,7 +15,7 @@ export async function hb_init() {
     RegisterButtonHandler(Events.Button.SetPreferredName, PreferredNameModal.showFromButton);
 }
 
-export module PreferredNameModal {
+export namespace PreferredNameModal {
     export async function showFromButton(interaction: ButtonInteraction) {
         const modal = new ModalBuilder()
             .setCustomId(Events.Modal.PreferredNameModal)

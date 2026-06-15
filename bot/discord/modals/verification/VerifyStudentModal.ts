@@ -21,7 +21,7 @@ export async function hb_init() {
     RegisterModalHandler(Events.Modal.VerifyStudentModal, VerifyStudentModal.submit);
 }
 
-export module VerifyStudentModal {
+export namespace VerifyStudentModal {
     export async function show(interaction: ButtonInteraction | CommandInteraction) {
         const modal = new ModalBuilder()
             .setCustomId(Events.Modal.VerifyStudentModal)
@@ -148,29 +148,10 @@ export module VerifyStudentModal {
             `- If you do not receive an email within 30 minutes, message the bot for assistance.`
         ].join("\n");
 
-        const replyMsg = (await interaction.editReply({ 
+        await interaction.editReply({
             content: response,
             components: [buttonRow]
-        })) as Message;
-
-        try {
-            const nicknameButton = await replyMsg.awaitMessageComponent({
-                filter: (i) => i.user.id === userId && i.customId === Events.Button.SetPreferredName,
-                componentType: ComponentType.Button,
-                time: 2 * 60 * 1000 // 2 minutes
-            });
-
-            await nicknameButton.deferUpdate();
-
-            const disabledButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                ButtonBuilder.from(continueButton).setDisabled(true)
-            );
-            await interaction.editReply({ components: [disabledButton] });
-
-
-        } catch (err) {
-            console.log("VerifyStudentModal - error" + err);
-        }
+        })
 
         await interaction.followUp({
             content: response2,
@@ -190,5 +171,10 @@ export module VerifyStudentModal {
             });
             return;
         }
+
+        await interaction.followUp({
+            content: response2,
+            ephemeral: true
+        })
     }
 }
