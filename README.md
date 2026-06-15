@@ -59,22 +59,22 @@ The bot uses two databases that are automatically configured:
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # View bot logs
-docker-compose logs honkbot
+docker compose logs honkbot
 
 # View PocketBase logs
-docker-compose logs pocketbase-db
+docker compose logs pocketbase-db
 
 # View MySQL logs
-docker-compose logs mysql
+docker compose logs mysql
 
 # Stop all services
-docker-compose down
+docker compose down
 
 # Rebuild and restart
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ## Database Schema

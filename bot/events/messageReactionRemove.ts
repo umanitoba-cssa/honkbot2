@@ -5,23 +5,33 @@ import { SQLGetUserMessage, SQLLogUserRemoveGiveReaction, SQLLogUserRemoveGiveTh
 export const name: Events = Events.MessageReactionRemove;
 
 export const execute = async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
-    const resolvedReaction = reaction.partial ? await reaction.fetch().catch(() => null) : reaction;
-    if (!resolvedReaction) return;
-
-    // Only process reactions in guild messages, not DMs, and not from bots
+    const resolvedReaction = reaction.partial ? await reaction.fetch().catch(() => null) : reaction;
+
+    if (!resolvedReaction) return;
+
     if (!user.bot && resolvedReaction.message.guildId) {
-        const message = await SQLGetUserMessage(resolvedReaction.message.guildId, resolvedReaction.message.channelId, resolvedReaction.message.id);    
+        const message = await SQLGetUserMessage(resolvedReaction.message.guildId, resolvedReaction.message.channelId, resolvedReaction.message.id);
+    // Only process reactions in guild messages, not DMs, and not from bots
+        if (message === null) {
+            return;
+        if (resolvedReaction.emoji.id === "1336040880112664597") {
 
         if (resolvedReaction.emoji.id === "1336040880112664597") {
             await SQLLogUserRemoveGiveThisTBHReaction(resolvedReaction.message.guildId, user.id);
-            if (message !== null) {
-                await SQLLogUserRemoveRecieveThisTBHReaction(resolvedReaction.message.guildId, String(message.user_id));
+            await SQLLogUserRemoveRecieveThisTBHReaction(resolvedReaction.message.guildId, String(message.user_id));
+                await SQLLogUserRemoveRecieveThisTBHReaction(resolvedReaction.message.guildId, String(message.user_id));
+
+        await SQLLogUserRemoveGiveReaction(resolvedReaction.message.guildId, user.id);
+        await SQLLogUserRemoveRecieveReaction(resolvedReaction.message.guildId, String(message.user_id));
+
             }
         }
 
-        await SQLLogUserRemoveGiveReaction(resolvedReaction.message.guildId, user.id);
+        await SQLLogUserRemoveGiveReaction(resolvedReaction.message.guildId, user.id);
+
         if (message !== null) {
-            await SQLLogUserRemoveRecieveReaction(resolvedReaction.message.guildId, String(message.user_id));
+            await SQLLogUserRemoveRecieveReaction(resolvedReaction.message.guildId, String(message.user_id));
+
         }
     }
 };

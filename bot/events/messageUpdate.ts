@@ -13,7 +13,8 @@ export const execute = async (oldMessage: Message | PartialMessage, newMessage: 
     }
 
     if (!resolvedNewMessage.author.bot && resolvedNewMessage.guildId) {
-        if (resolvedOldMessage.content !== resolvedNewMessage.content) {
+        if (resolvedOldMessage.content !== resolvedNewMessage.content) {
+
             if (resolvedNewMessage.guild) {
                 const sql_message = await SQLGetUserMessage(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id);
                 if (sql_message !== null) {
@@ -22,7 +23,7 @@ export const execute = async (oldMessage: Message | PartialMessage, newMessage: 
             }
             
             const editedTimestamp = resolvedNewMessage.editedTimestamp ?? Date.now()
-
+            await SQLLogUserOriginalMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedOldMessage.content, resolvedNewMessage.content, editedTimestamp);
             await SQLLogUserOriginalMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedOldMessage.content, resolvedNewMessage.content, resolvedOldMessage.createdTimestamp);
             await SQLLogUserMessageEdit(resolvedNewMessage.guildId, resolvedNewMessage.channelId, resolvedNewMessage.id, resolvedNewMessage.author.id, resolvedNewMessage.content, editedTimestamp);
         }
