@@ -8,9 +8,7 @@ import {
     CommandInteraction,
     ModalSubmitInteraction,
     ButtonBuilder,
-    ButtonStyle,
-    Message,
-    ComponentType
+    ButtonStyle
 } from "discord.js";
 import { RegisterModalHandler } from "../../../data/Registry";
 import { Events } from "../../../data/Events";
@@ -152,24 +150,6 @@ export namespace VerifyStudentModal {
             content: response,
             components: [buttonRow]
         })
-
-        const replyMsg = await interaction.fetchReply();
-
-        try {
-            const nicknameButton = await replyMsg.awaitMessageComponent({
-                filter: (i) => i.user.id === userId && i.customId === Events.Button.SetPreferredName,
-                componentType: ComponentType.Button,
-                time: 2 * 60 * 1000 // 2 minutes
-            });
-            await nicknameButton.deferUpdate();
-
-            const disabledButton = new ActionRowBuilder<ButtonBuilder>().addComponents(
-                ButtonBuilder.from(continueButton).setDisabled(true)
-            );
-            await interaction.editReply({ components: [disabledButton] });
-        } catch (err) {
-            console.log("VerifyStudentModal - error" + err);
-        }
 
         try {
             const name = await SendVerificationEmail(guildId, email, record.id);

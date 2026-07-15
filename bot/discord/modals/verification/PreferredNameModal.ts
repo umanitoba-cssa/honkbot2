@@ -17,6 +17,8 @@ export async function hb_init() {
 
 export namespace PreferredNameModal {
     export async function showFromButton(interaction: ButtonInteraction) {
+        if (interaction.deferred || interaction.replied) return;
+
         const modal = new ModalBuilder()
             .setCustomId(Events.Modal.PreferredNameModal)
             .setTitle("Set Preferred Name");

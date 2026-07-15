@@ -10,8 +10,8 @@ if (!isMySQLConfigured) {
     console.warn('MySQL not configured - message logging will be disabled');
 }
 
-// Connection cache for different guild databases
-const connectionCache = new Map<string, Connection>();
+// Connection cache for different guild databases.
+const connectionCache = new Map<string, Promise<Connection>>();
 
 // Base connection configuration without database specified
 const baseAccess: ConnectionOptions = {
@@ -23,24 +23,10 @@ const baseAccess: ConnectionOptions = {
     bigNumberStrings: true
 }
 
-// Get or create connection for a specific guild
-async function getGuildConnection(guild_id: string): Promise<Connection | null> {
-    if (!isMySQLConfigured) {
-        return null;
-    }
-    
-    if (!guild_id) {
-        throw new Error('Guild ID is required');
-    }
-
-    // Check if we already have a cached connection for this guild
-    if (connectionCache.has(guild_id)) {
-        return connectionCache.get(guild_id)!;
-    }
-
+async function createGuildConnection(guild_id: string): Promise<Connection> {
     // Create connection without database first to create database if needed
     const adminConnection = await mysql.createConnection(baseAccess);
-    
+
     // Create database if it doesn't exist
     await adminConnection.execute(`CREATE DATABASE IF NOT EXISTS \`${guild_id}\``);
     await adminConnection.end();
@@ -52,14 +38,45 @@ async function getGuildConnection(guild_id: string): Promise<Connection | null> 
     };
 
     const guildConnection = await mysql.createConnection(guildAccess);
-    
+
     // Initialize tables if they don't exist
     await initializeTables(guildConnection);
-    
-    // Cache the connection
-    connectionCache.set(guild_id, guildConnection);
-    
+
     return guildConnection;
+}
+
+// Get or create connection for a specific guild
+async function getGuildConnection(guild_id: string): Promise<Connection | null> {
+    if (!isMySQLConfigured) {
+        return null;
+    }
+
+    if (!guild_id) {
+        throw new Error('Guild ID is required');
+    }
+
+    let connectionPromise = connectionCache.get(guild_id);
+    if (!connectionPromise) {
+        connectionPromise = createGuildConnection(guild_id);
+        connectionCache.set(guild_id, connectionPromise);
+    }
+
+    try {
+        return await connectionPromise;
+    } catch (error) {
+        // Don't leave a rejected promise cached forever - let the next call retry.
+        connectionCache.delete(guild_id);
+        throw error;
+    }
+}
+
+// Missing connection only ever means MySQL isn't configured.
+async function requireGuildConnection(guild_id: string): Promise<Connection> {
+    const connection = await getGuildConnection(guild_id);
+    if (!connection) {
+        throw new Error('SQL DB Connection Missing');
+    }
+    return connection;
 }
 
 // Initialize database tables with the schema from your diagram
@@ -128,18 +145,14 @@ export async function SQLLogUserMessage(
     user_id: string,
     content: string,
     timestamp: number) {
-    
+
     if (!isMySQLConfigured || !guild_id) {
         return; // Skip if MySQL not configured or no guild ID
     }
 
     const date = new Date(timestamp);
     const mysqlDatetime = date.toISOString().slice(0, 19).replace('T', ' ');
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
 
     await connection.execute(
         'INSERT INTO messages (channel_id, message_id, user_id, content, timestamp) VALUES (?, ?, ?, ?, ?)',
@@ -151,16 +164,13 @@ export async function SQLGetUserMessage(
     guild_id: string | null,
     channel_id: string,
     message_id: string): Promise<SQLMessage | null> {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     try {
-        const connection = await getGuildConnection(guild_id);
-        if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+        const connection = await requireGuildConnection(guild_id);
         const [rows] = await connection.query<any[]>(
             'SELECT * FROM messages WHERE channel_id = ? AND message_id = ?',
             [channel_id, message_id]
@@ -191,18 +201,15 @@ export async function SQLLogUserMessageEdit(
     user_id: string,
     content: string,
     timestamp: number) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     const date = new Date(timestamp);
     const mysqlDatetime = date.toISOString().slice(0, 19).replace('T', ' ');
-    const connection = await getGuildConnection(guild_id);
+    const connection = await requireGuildConnection(guild_id);
 
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
     await connection.execute(
         'UPDATE messages SET content = ?, timestamp = ? WHERE message_id = ?',
         [content, mysqlDatetime, message_id]
@@ -217,31 +224,25 @@ export async function SQLLogUserOriginalMessageEdit(
     old_content: string,
     new_content: string,
     timestamp: number) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     const date = new Date(timestamp);
     const mysqlDatetime = date.toISOString().slice(0, 19).replace('T', ' ');
-    const connection = await getGuildConnection(guild_id);
+    const connection = await requireGuildConnection(guild_id);
 
-    if (!connection) {
-            return null;
-        }
-    let results = await connection.query(
-        'SELECT * FROM message_edited WHERE channel_id = ? AND message_id = ? ORDER BY edit_number DESC LIMIT 1', 
+    const [results] = await connection.query(
+        'SELECT * FROM message_edited WHERE channel_id = ? AND message_id = ? ORDER BY edit_number DESC LIMIT 1',
         [channel_id, message_id]
     );
-    
-    const rows = (results as any)[0] as SQLEditMessage[];
-    if (!rows || rows.length === 0) {
-        return null;
-    }
+
+    const rows = results as SQLEditMessage[];
 
     let old_content_db = old_content;
     let edit_id = 0;
-    const editedmessage = rows[0];
+    const editedmessage = rows?.[0];
     if (editedmessage && typeof editedmessage.edit_number === 'number') {
         edit_id = editedmessage.edit_number + 1;
         old_content_db = editedmessage.new_content;
@@ -266,11 +267,8 @@ export async function SQLLogUserMessageDelete(
     if (result == null) {
         return;
     }
-    
-    const connection = await getGuildConnection(guild_id);
-    if (!connection) {
-            return null;
-        }
+
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'INSERT INTO message_deleted (channel_id, message_id, user_id, content, timestamp) VALUES (?, ?, ?, ?, ?)',
         [result.channel_id, result.message_id, result.user_id, result.content, result.timestamp]
@@ -281,41 +279,29 @@ export async function SQLLogUserMessageDelete(
 export async function SQLLogUserRecieveReaction(
     guild_id: string | null,
     user_id: string) {
-    
-    if (!guild_id) {
-        throw new Error('Guild ID is required');
-    }
 
-    try {
-        await SQLGetUserCount(guild_id, user_id);
-        const connection = await getGuildConnection(guild_id);
-
-        if (!connection) {
-            return null;
-        }
-        await connection.execute(
-            'UPDATE counters SET reactions_received = reactions_received + 1 WHERE user_id = ?',
-            [user_id]
-        );
-    } catch (error) {
-        console.error('Error logging reaction received:', error);
-    }
-}
-
-export async function SQLLogUserGiveReaction(
-    guild_id: string | null,
-    user_id: string) {
-    
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
+    const connection = await requireGuildConnection(guild_id);
+    await connection.execute(
+        'UPDATE counters SET reactions_received = reactions_received + 1 WHERE user_id = ?',
+        [user_id]
+    );
+}
 
-    if (!connection) {
-            return null;
-        }
+export async function SQLLogUserGiveReaction(
+    guild_id: string | null,
+    user_id: string) {
+
+    if (!guild_id) {
+        throw new Error('Guild ID is required');
+    }
+
+    await SQLGetUserCount(guild_id, user_id);
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET reactions_sent = reactions_sent + 1 WHERE user_id = ?',
         [user_id]
@@ -325,17 +311,13 @@ export async function SQLLogUserGiveReaction(
 export async function SQLLogUserRemoveRecieveReaction(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET reactions_received = reactions_received - 1 WHERE user_id = ?',
         [user_id]
@@ -345,17 +327,13 @@ export async function SQLLogUserRemoveRecieveReaction(
 export async function SQLLogUserRemoveGiveReaction(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            return null;
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET reactions_sent = reactions_sent - 1 WHERE user_id = ?',
         [user_id]
@@ -365,17 +343,13 @@ export async function SQLLogUserRemoveGiveReaction(
 export async function SQLLogUserRecieveThisTBHReaction(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET thistbh_received = thistbh_received + 1 WHERE user_id = ?',
         [user_id]
@@ -385,17 +359,13 @@ export async function SQLLogUserRecieveThisTBHReaction(
 export async function SQLLogUserGiveThisTBHReaction(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET thistbh_sent = thistbh_sent + 1 WHERE user_id = ?',
         [user_id]
@@ -405,17 +375,13 @@ export async function SQLLogUserGiveThisTBHReaction(
 export async function SQLLogUserRemoveRecieveThisTBHReaction(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET thistbh_received = thistbh_received - 1 WHERE user_id = ?',
         [user_id]
@@ -425,17 +391,13 @@ export async function SQLLogUserRemoveRecieveThisTBHReaction(
 export async function SQLLogUserRemoveGiveThisTBHReaction(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET thistbh_sent = thistbh_sent - 1 WHERE user_id = ?',
         [user_id]
@@ -445,17 +407,13 @@ export async function SQLLogUserRemoveGiveThisTBHReaction(
 export async function SQLLogUserMessageCount(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
     await SQLGetUserCount(guild_id, user_id);
-    const connection = await getGuildConnection(guild_id);
-
-    if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
+    const connection = await requireGuildConnection(guild_id);
     await connection.execute(
         'UPDATE counters SET message_count = message_count + 1 WHERE user_id = ?',
         [user_id]
@@ -466,41 +424,40 @@ export async function SQLLogUserMessageCount(
 export async function SQLGetUserCount(
     guild_id: string | null,
     user_id: string) {
-    
+
     if (!guild_id) {
         throw new Error('Guild ID is required');
     }
 
-    try {
-        const connection = await getGuildConnection(guild_id);
-        if (!connection) {
-            throw new Error("SQL DB Connection Missing")
-        }
-        const [rows] = await connection.query(
-            'SELECT * FROM counters WHERE user_id = ?', [user_id]
-        );
-        const counters: SQLCounters = (rows as any)[0] as SQLCounters;
-        if (counters === undefined) {
-            await connection.execute(
-                'INSERT INTO counters (user_id, reactions_sent, reactions_received, message_count, thistbh_sent, thistbh_received) VALUES (?, 0, 0, 0, 0, 0)',
-                [user_id]
-            );
-            const [rows] = await connection.query(
-                'SELECT * FROM counters WHERE user_id = ?', [user_id]
-            );
-            const counters: SQLCounters = (rows as any)[0] as SQLCounters;
-            return counters;
-        }
+    const connection = await requireGuildConnection(guild_id);
+    const [rows] = await connection.query(
+        'SELECT * FROM counters WHERE user_id = ?', [user_id]
+    );
+    const counters: SQLCounters = (rows as any)[0] as SQLCounters;
+    if (counters !== undefined) {
         return counters;
-    } catch (error) {
-        console.error('Error fetching sql counter:', error);
     }
+
+    const defaultCounters: SQLCounters = {
+        user_id,
+        reactions_sent: 0n,
+        reactions_received: 0n,
+        message_count: 0n,
+        thistbh_sent: 0n,
+        thistbh_received: 0n,
+    };
+    await connection.execute(
+        'INSERT INTO counters (user_id, reactions_sent, reactions_received, message_count, thistbh_sent, thistbh_received) VALUES (?, 0, 0, 0, 0, 0)',
+        [user_id]
+    );
+    return defaultCounters;
 }
 
 // Clean up function to close all connections
 export async function closeDatabaseConnections(): Promise<void> {
-    for (const [guildId, connection] of connectionCache) {
+    for (const [guildId, connectionPromise] of connectionCache) {
         try {
+            const connection = await connectionPromise;
             await connection.end();
             console.log(`Closed database connection for guild: ${guildId}`);
         } catch (error) {

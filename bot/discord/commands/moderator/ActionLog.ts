@@ -21,7 +21,7 @@ export const command = new SlashCommandBuilder()
     .setDescription("View all moderation actions taken by a user.")
     .addUserOption((option) => option.setName("moderator").setDescription("Mod to lookup").setRequired(true))
     .addStringOption((option) => option.setName("type").setDescription("Type of action to filter by").addChoices({name: 'ModNotes', value: 'modnotes'}, {name: 'Warnings', value: "warnings"}, {name: 'Bans', value: "bans"}).setRequired(true))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ViewAuditLog);
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
 
 export async function execute(interaction: CommandInteraction) {
     if (!interaction.guild) {

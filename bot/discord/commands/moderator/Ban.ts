@@ -42,7 +42,15 @@ export async function execute(interaction: CommandInteraction) {
 
     const ban = await AddUserBan(guild.id, target.id, issuer.id, reason, false);
     await LogBan(interaction, ban);
-    target.ban({ reason: reason });
+
+    try {
+        await target.ban({ reason: reason });
+    } catch (error) {
+        console.error(`Failed to ban <@${target.id}>:`, error);
+        await interaction.editReply({ content: `Failed to ban <@${target.id}>: the ban could not be completed.` });
+        return;
+    }
+
     let message = `
             ## Ban Issued
             You have been banned from the **${guild.name}** server for the following reason:
