@@ -18,12 +18,6 @@ RUN mkdir -p /pb/pb_data
 COPY start.sh /pb/start.sh
 RUN chmod +x /pb/start.sh
 
-# uncomment to copy the local pb_migrations dir into the image
-# COPY ./pb_migrations /pb/pb_migrations
-
-# uncomment to copy the local pb_hooks dir into the image
-# COPY ./pb_hooks /pb/pb_hooks
-
 EXPOSE 8080
 
 # create volume for persistent data storage
