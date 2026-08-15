@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-ARG PB_VERSION=0.20.3
+ARG PB_VERSION=0.39.11
 
 RUN apk add --no-cache \
     unzip \
@@ -13,6 +13,8 @@ RUN unzip /tmp/pb.zip -d /pb/
 
 # create data directory for databases
 RUN mkdir -p /pb/pb_data
+
+RUN mkdir -p /pb/pb_migrations
 
 # copy startup script
 COPY start.sh /pb/start.sh

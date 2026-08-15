@@ -35,6 +35,7 @@ services:
       - "0.0.0.0:8080:8080"
     volumes:
       - ./pocketbase-db/data:/pb/pb_data
+      - ./pocketbase-db/migrations:/pb/pb_migrations
     environment:
       - POCKETBASE_ADMIN_EMAIL=${POCKETBASE_EMAIL}
       - POCKETBASE_ADMIN_PASSWORD=${POCKETBASE_PASSWORD}
