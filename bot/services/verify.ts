@@ -1,9 +1,9 @@
-import { type CommandInteraction, type GuildMember, type Role } from "discord.js";
+import { type CommandInteraction, type GuildMember, type Role, type ButtonInteraction } from "discord.js";
 import type { PendingVerification } from "../models/VerifiedUser";
 import { GetGuildSettings, VerifyUserDB, VerifyAlumniUserDB, VerifyAlumniUserAsModDB } from "../database/database";
 import { LogVerification, LogPendingVerification } from "./logs";
 
-export async function TryVerifyUserAsMod(interaction: CommandInteraction, pending: PendingVerification) {
+export async function TryVerifyUserAsMod(interaction: CommandInteraction | ButtonInteraction, pending: PendingVerification) {
     const guildSettings = await GetGuildSettings(pending.guild_id);
 
     if (!guildSettings || !guildSettings.verified_role_id || !guildSettings.verified_role_id) {

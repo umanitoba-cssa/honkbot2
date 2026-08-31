@@ -1,7 +1,6 @@
 import PocketBase from "pocketbase";
 import type GuildSettings from "../models/GuildSettings";
-import type RollID from "../models/RoleID";
-import type { PendingVerification, VerifiedStudent, VerifiedAlumni, VerifiedUser } from "../models/VerifiedUser";
+import type { PendingVerification, VerifiedStudent, VerifiedUser } from "../models/VerifiedUser";
 import type { Warning } from "../models/Warning";
 import type { Ban } from "../models/Ban";
 import type { Kick } from "../models/Kick";
@@ -26,8 +25,13 @@ const getPb = async (): Promise<PocketBase> => {
         }
 
         _pb = new PocketBase(process.env.POCKETBASE_HOST);
-        await _pb.admins.authWithPassword(process.env.POCKETBASE_EMAIL, process.env.POCKETBASE_PASSWORD);
-        await _pb.autoCancellation(false);
+
+        await _pb.collection('_superusers').authWithPassword(
+            process.env.POCKETBASE_EMAIL!,
+            process.env.POCKETBASE_PASSWORD!
+        );
+
+        _pb.autoCancellation(false);
     }
 
     return _pb;
@@ -35,21 +39,15 @@ const getPb = async (): Promise<PocketBase> => {
 
 export async function GetGuildSettings(guild_id: string): Promise<GuildSettings | null> {
     const pb = await getPb();
-    const guild_settings: GuildSettings | null = await pb
-        .collection("guild_settings")
-        .getFirstListItem(pb.filter(`guild_id = "${guild_id}"`));
-
-    return guild_settings ?? null;
+    try {
+        return await pb
+            .collection("guild_settings")
+            .getFirstListItem(pb.filter("guild_id = {:guild_id}", { guild_id }));
+    } catch (error: any) {
+        if (error?.status === 404) return null;
+        throw error;
+    }
 }
-
-// export async function GetRoleIDs(guild_id: string): Promise<GuildSettings | null> {
-//     const pb = await getPb();
-//     const role_ids: RollID | null = await pb
-//         .collection("role_ids")
-//         .getFirstListItem(pb.filter(`guild_id = "${guild_id}"`));
-
-//     return role_ids ?? null;
-// }
 
 export async function CreatePendingStudentVerification(
     guild_id: string,
@@ -74,11 +72,9 @@ export async function CreatePendingStudentVerification(
         expires: new Date(Date.now() + 1000 * 60 * 60) // 1 hour
     };
 
-    const record: PendingVerification = await pb
+    return await pb
         .collection("pending_verifications")
         .create(pendingVerification);
-
-    return record;
 }
 
 export async function CreatePendingAlumniVerification(
@@ -102,42 +98,35 @@ export async function CreatePendingAlumniVerification(
         expires: new Date(Date.now() + 1000 * 60 * 60) // 1 hour
     };
 
-    const record: PendingVerification = await pb
+    return await pb
         .collection("pending_verifications")
         .create(pendingVerification);
-
-    return record;
 }
 
 export async function GetPendingVerification(id: string): Promise<PendingVerification | null> {
     const pb = await getPb();
-    let pendingVerification: PendingVerification | null = null;
 
     try {
-        pendingVerification = await pb
-            .collection("pending_verifications")
-            .getOne(id);
-    } catch (error) {
-        console.warn(`Failed to fetch from pending_verifications: ${error}`);
+        return await pb.collection("pending_verifications").getOne(id);
+    } catch (error: any) {
+        if (error?.status !== 404) throw error;
         try {
-            pendingVerification = await pb
-                .collection("pending_alumni_verifications")
-                .getOne(id);
-        } catch (alumniError) {
-            console.error(`Failed to fetch from pending_alumni_verifications: ${alumniError}`);
+            return await pb.collection("pending_alumni_verifications").getOne(id);
+        } catch (alumniError: any) {
+            if (alumniError?.status === 404) return null;
+            throw alumniError;
         }
     }
-
-    return pendingVerification ?? null;
 }
 
 export async function GetPendingAlumniVerification(id: string): Promise<PendingVerification | null> {
     const pb = await getPb();
-    const pendingVerification: PendingVerification | null = await pb
-        .collection("pending_alumni_verifications")
-        .getOne(id);
-
-    return pendingVerification ?? null;
+    try {
+        return await pb.collection("pending_alumni_verifications").getOne(id);
+    } catch (error: any) {
+        if (error?.status === 404) return null;
+        throw error;
+    }
 }
 
 export async function UpdatePendingVerification(pendingVerification: PendingVerification): Promise<void> {
@@ -163,7 +152,7 @@ export async function VerifyUserDB(pending: PendingVerification) {
 
     const existingVerifications = await pb
         .collection("verified_users")
-        .getFullList({ filter: `user_id = "${pending.user_id}" && guild_id = "${pending.guild_id}"` });
+        .getFullList({ filter: pb.filter("user_id = {:user_id} && guild_id = {:guild_id}", { user_id: pending.user_id, guild_id: pending.guild_id }) });
 
     for (const verification of existingVerifications) {
         await pb.collection("verified_users").delete(verification.id);
@@ -179,7 +168,7 @@ export async function VerifyAlumniUserDB(pending: PendingVerification) {
 
     const existingVerifications = await pb
         .collection("pending_alumni_verifications")
-        .getFullList({ filter: `user_id = "${pending.user_id}" && guild_id = "${pending.guild_id}"` });
+        .getFullList({ filter: pb.filter("user_id = {:user_id} && guild_id = {:guild_id}", { user_id: pending.user_id, guild_id: pending.guild_id }) });
 
     for (const verification of existingVerifications) {
         await pb.collection("pending_alumni_verifications").delete(verification.id);
@@ -195,7 +184,7 @@ export async function VerifyAlumniUserAsModDB(pending: PendingVerification) {
 
     const existingVerifications = await pb
         .collection("verified_users")
-        .getFullList({ filter: `user_id = "${pending.user_id}" && guild_id = "${pending.guild_id}"` });
+        .getFullList({ filter: pb.filter("user_id = {:user_id} && guild_id = {:guild_id}", { user_id: pending.user_id, guild_id: pending.guild_id }) });
 
     for (const verification of existingVerifications) {
         await pb.collection("verified_users").delete(verification.id);
@@ -208,14 +197,12 @@ export async function VerifyAlumniUserAsModDB(pending: PendingVerification) {
 export async function GetVerifiedUser(guild_id: string, user_id: string): Promise<VerifiedUser | null> {
     const pb = await getPb();
     try {
-        const verifiedUser: VerifiedUser | null = await pb
+        return await pb
             .collection("verified_users")
-            .getFirstListItem(pb.filter(`user_id = "${user_id}" && guild_id = "${guild_id}"`));
-        
-        return verifiedUser ?? null;
-    } catch (error) {
-        console.error("Error fetching verified user:", error);
-        return null;
+            .getFirstListItem(pb.filter("user_id = {:user_id} && guild_id = {:guild_id}", { user_id, guild_id }));
+    } catch (error: any) {
+        if (error?.status === 404) return null;
+        throw error;
     }
 }
 
@@ -227,70 +214,58 @@ export async function AddUserWarning(guild_id: string, target_user_id: string, i
         issuer_user_id,
         reason,
         strike
-    }
+    };
     return await pb.collection("warnings").create(data);
 }
 
 export async function GetModnotes(guild_id: string, target_user_id: string): Promise<Modnote[]> {
     const pb = await getPb();
-    const modnotes: Modnote[] = await pb
+    return await pb
         .collection("mod_notes")
-        .getFullList({ filter: `guild_id = "${guild_id}" && target_user_id = "${target_user_id}"` });
-
-    return modnotes;
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && target_user_id = {:target_user_id}", { guild_id, target_user_id }) });
 }
 
 export async function GetModModnotes(guild_id: string, issuer_user_id: string): Promise<Modnote[]> {
     const pb = await getPb();
-    const modnotes: Modnote[] = await pb
+    return await pb
         .collection("mod_notes")
-        .getFullList({ filter: `guild_id = "${guild_id}" && issuer_user_id = "${issuer_user_id}"` });
-
-    return modnotes;
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && issuer_user_id = {:issuer_user_id}", { guild_id, issuer_user_id }) });
 }
 
 export async function GetWarnings(guild_id: string, target_user_id: string): Promise<Warning[]> {
     const pb = await getPb();
-    const warnings: Warning[] = await pb
+    return await pb
         .collection("warnings")
-        .getFullList({ filter: `guild_id = "${guild_id}" && target_user_id = "${target_user_id}"` });
-
-    return warnings;
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && target_user_id = {:target_user_id}", { guild_id, target_user_id }) });
 }
 
 export async function GetModWarnings(guild_id: string, issuer_user_id: string): Promise<Warning[]> {
     const pb = await getPb();
-    const warnings: Warning[] = await pb
+    return await pb
         .collection("warnings")
-        .getFullList({ filter: `guild_id = "${guild_id}" && issuer_user_id = "${issuer_user_id}"` });
-
-    return warnings;
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && issuer_user_id = {:issuer_user_id}", { guild_id, issuer_user_id }) });
 }
 
 export async function GetBans(guild_id: string, target_user_id: string): Promise<Ban[]> {
     const pb = await getPb();
-    const bans: Ban[] = await pb
+    return await pb
         .collection("bans")
-        .getFullList({ filter: `guild_id = "${guild_id}" && target_user_id = "${target_user_id}"` });
-
-    return bans;
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && target_user_id = {:target_user_id}", { guild_id, target_user_id }) });
 }
 
 export async function GetModBans(guild_id: string, issuer_user_id: string): Promise<Ban[]> {
     const pb = await getPb();
-    const bans: Ban[] = await pb
+    return await pb
         .collection("bans")
-        .getFullList({ filter: `guild_id = "${guild_id}" && issuer_user_id = "${issuer_user_id}"` });
-
-    return bans;
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && issuer_user_id = {:issuer_user_id}", { guild_id, issuer_user_id }) });
 }
 
 export async function GetStrikeCount(guild_id: string, target_user_id: string): Promise<number> {
     const pb = await getPb();
-    
+
     const warnings: Warning[] = await pb
         .collection("warnings")
-        .getFullList({ filter: `guild_id = "${guild_id}" && target_user_id = "${target_user_id}" && strike = true` });
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && target_user_id = {:target_user_id} && strike = true", { guild_id, target_user_id }) });
 
     return warnings.length;
 }
@@ -303,7 +278,7 @@ export async function AddUserBan(guild_id: string, target_user_id: string, issue
         issuer_user_id,
         reason,
         automatic
-    }
+    };
     return await pb.collection("bans").create(data);
 }
 
@@ -315,7 +290,7 @@ export async function AddUserKick(guild_id: string, target_user_id: string, issu
         issuer_user_id,
         reason,
         automatic
-    }
+    };
     return await pb.collection("kicks").create(data);
 }
 
@@ -328,7 +303,7 @@ export async function AddUserTimeout(guild_id: string, target_user_id: string, i
         duration,
         reason,
         automatic
-    }
+    };
     return await pb.collection("timeouts").create(data);
 }
 
@@ -339,7 +314,7 @@ export async function AddModnote(guild_id: string, target_user_id: string, issue
         target_user_id,
         issuer_user_id,
         content
-    }
+    };
     return await pb.collection("mod_notes").create(data);
 }
 
@@ -351,6 +326,18 @@ export async function AddModMail(guild_id: string, target_user_id: string, issue
         issuer_user_id,
         content,
         incoming
-    }
+    };
     return await pb.collection("mod_mail").create(data);
+}
+
+export async function GetAllVerifiedStudents(guild_id: string): Promise<VerifiedUser[]> {
+    const pb = await getPb();
+    return await pb
+        .collection("verified_users")
+        .getFullList({ filter: pb.filter("guild_id = {:guild_id} && type = 'student'", { guild_id }) });
+}
+
+export async function RemoveVerifiedUser(id: string): Promise<void> {
+    const pb = await getPb();
+    await pb.collection("verified_users").delete(id);
 }

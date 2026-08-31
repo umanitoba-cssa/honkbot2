@@ -14,8 +14,6 @@ export default interface GuildSettings {
     instructor_role_id: string
     guest_role_id: string
     verification_email_endpoint: string
-    role_select_channel_id: string
-    voteban_channel_id: string
     modlog_channel_id: string
     modmail_channel_id: string
     welcome_channel_id: string

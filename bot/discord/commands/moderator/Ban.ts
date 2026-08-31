@@ -31,11 +31,26 @@ export async function execute(interaction: CommandInteraction) {
     const issuer = interaction.member! as GuildMember;
     const target = interaction.options.get("user")!.member as GuildMember;
     const reason = interaction.options.get("reason")!.value as string;
-    const dm = await target.createDM();
+    const dm = await target.createDM().catch(error => {
+	    console.log(error);
+	    return null;
+    });
+
+    if (!dm) {
+	    console.error(`Failed to send message to <@${target.id}>.`);
+    }
 
     const ban = await AddUserBan(guild.id, target.id, issuer.id, reason, false);
     await LogBan(interaction, ban);
-    target.ban({ reason: reason });
+
+    try {
+        await target.ban({ reason: reason });
+    } catch (error) {
+        console.error(`Failed to ban <@${target.id}>:`, error);
+        await interaction.editReply({ content: `Failed to ban <@${target.id}>: the ban could not be completed.` });
+        return;
+    }
+
     let message = `
             ## Ban Issued
             You have been banned from the **${guild.name}** server for the following reason:
@@ -44,7 +59,9 @@ export async function execute(interaction: CommandInteraction) {
 
             If you believe this ban has been issued in error, please contact a server moderator.
         `;
+if (dm) {
     await dm.send(message.replace(/  +/g, ""));
+}
 
     await interaction.editReply({ content: `Ban issued to <@${target.id}>.` });
 }

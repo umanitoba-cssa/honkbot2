@@ -6,7 +6,9 @@ import {
     TextInputStyle,
     ButtonInteraction,
     CommandInteraction,
-    ModalSubmitInteraction
+    ModalSubmitInteraction,
+    ButtonBuilder,
+    ButtonStyle
 } from "discord.js";
 import { RegisterModalHandler } from "../../../data/Registry";
 import { Events } from "../../../data/Events";
@@ -17,7 +19,7 @@ export async function hb_init() {
     RegisterModalHandler(Events.Modal.VerifyStudentModal, VerifyStudentModal.submit);
 }
 
-export module VerifyStudentModal {
+export namespace VerifyStudentModal {
     export async function show(interaction: ButtonInteraction | CommandInteraction) {
         const modal = new ModalBuilder()
             .setCustomId(Events.Modal.VerifyStudentModal)
@@ -73,8 +75,9 @@ export module VerifyStudentModal {
     }
 
     export async function submit(interaction: ModalSubmitInteraction) {
+        // First, process the verification form
         await interaction.reply({
-            content: "Submitting your verification request, please wait...",
+            content: "Processing your verification request...",
             ephemeral: true
         });
 
@@ -92,7 +95,7 @@ export module VerifyStudentModal {
         const year = interaction.fields.getTextInputValue("student-year");
         const studentNumber = interaction.fields.getTextInputValue("student-number");
 
-        if (!(email.endsWith("@myumanitoba.ca") || email.endsWith("@icmanitoba.ca"))) {
+        if (!(email.endsWith("@myumanitoba.ca") || email.endsWith("@icmanitoba.ca") || email.endsWith("@learning.icmanitoba.ca"))) {
             await interaction.editReply({
                 content: "Email must be a @myumanitoba.ca or @icmanitoba.ca email address."
             });
@@ -126,6 +129,28 @@ export module VerifyStudentModal {
             yearNumber
         );
 
+        const continueButton = new ButtonBuilder()
+            .setCustomId(Events.Button.SetPreferredName)
+            .setLabel("Set Your Preferred Name")
+            .setStyle(ButtonStyle.Primary);
+
+        const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(continueButton);
+
+        const response = [
+            "**Next Step:** As per our TOU and Rules members are required to put their preferred name as their server nickname. Please set your preferred name that will be used as your server nickname:",
+        ].join("\n");
+
+        const response2 = [
+            `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command: \n\n\`/verify [code]\`\n\n`,
+            "- If you entered the wrong email address, please resubmit the verification form.",
+            `- If you do not receive an email within 30 minutes, message the bot for assistance.`
+        ].join("\n");
+
+        await interaction.editReply({
+            content: response,
+            components: [buttonRow]
+        })
+
         try {
             const name = await SendVerificationEmail(guildId, email, record.id);
             if (name) {
@@ -135,20 +160,14 @@ export module VerifyStudentModal {
             console.error(error);
             await interaction.editReply({
                 content:
-                    `There was an error while sending the verification email. Please contact ${process.env.BOT_ADMIN} for assistance.`
+                    `There was an error while sending the verification email. Please message the bot for assistance.`
             });
             return;
         }
 
-        const response = [
-            `Thank you! A verification code has been sent to your email (${email}). Once you receive the code you can complete your verification request by entering the following command:`,
-            "```",
-            `/verify [code]`,
-            "```",
-            "- If you entered the wrong email address, please resubmit the verification form.",
-            `- If you do not receive an email within 30 minutes, contact ${process.env.BOT_ADMIN} for assistance.`
-        ].join("\n");
-
-        await interaction.editReply({ content: response });
+        await interaction.followUp({
+            content: response2,
+            ephemeral: true
+        })
     }
 }
