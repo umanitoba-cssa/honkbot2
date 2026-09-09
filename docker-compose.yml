@@ -51,7 +51,7 @@ services:
   mysql:
     container_name: message-db
     restart: always
-    image: mysql:8.0
+    image: mysql:8.0.45
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: 'honkbot'
