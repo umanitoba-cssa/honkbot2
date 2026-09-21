@@ -5,6 +5,8 @@ services:
     build:
       context: ./bot/
       dockerfile: ./Dockerfile
+    ports:
+      - "6767:6767"
     depends_on:
       pocketbase-db:
         condition: service_healthy
@@ -14,6 +16,7 @@ services:
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_GUILD_ID=${DISCORD_GUILD_ID}
       - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - WEB_API_KEY=${WEB_API_KEY}
       - POCKETBASE_HOST=http://moderation-db:8080
       - POCKETBASE_EMAIL=${POCKETBASE_EMAIL}
       - POCKETBASE_PASSWORD=${POCKETBASE_PASSWORD}
