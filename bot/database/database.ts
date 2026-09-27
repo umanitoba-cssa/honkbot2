@@ -206,6 +206,18 @@ export async function GetVerifiedUser(guild_id: string, user_id: string): Promis
     }
 }
 
+export async function IsUserVerified(guild_id: string, user_id: string): Promise<boolean> {
+    const pb = await getPb();
+    try {
+        await pb
+            .collection("verified_users")
+            .getFirstListItem(pb.filter("user_id = {:user_id} && guild_id = {:guild_id}", { user_id, guild_id }));
+        return true;
+    } catch (error: any) {
+        return false;
+    }
+}
+
 export async function AddUserWarning(guild_id: string, target_user_id: string, issuer_user_id: string, reason: string, strike: boolean): Promise<Warning> {
     const pb = await getPb();
     const data = {

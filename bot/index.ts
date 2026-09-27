@@ -2,6 +2,8 @@ import { Client, GatewayIntentBits, Partials } from "discord.js";
 import fs from "fs";
 import path from "path";
 import { LoadAllModules } from "./data/Registry";
+import express from "express";
+import { setupApi } from "./api/api";
 
 // Check for required environment variables
 if (!process.env.DISCORD_CLIENT_ID) {
@@ -75,3 +77,11 @@ for (const file of eventFiles) {
 
 // Start discord.js client
 client.login(process.env.DISCORD_TOKEN);
+
+// Start the bot API server
+const app = express();
+app.use(express.json());
+setupApi(app);
+app.listen(process.env.BOT_API_PORT, () => {
+    console.log(`API server running on http://localhost:${process.env.BOT_API_PORT}`);
+});
