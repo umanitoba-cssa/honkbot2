@@ -82,6 +82,6 @@ client.login(process.env.DISCORD_TOKEN);
 const app = express();
 app.use(express.json());
 setupApi(app);
-app.listen(6767, () => {
-    console.log("API server running on http://localhost:6767");
+app.listen(process.env.BOT_API_PORT, () => {
+    console.log(`API server running on http://localhost:${process.env.BOT_API_PORT}`);
 });
