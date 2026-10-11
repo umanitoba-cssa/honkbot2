@@ -3,6 +3,16 @@ import { RegisterCommand } from "../../../data/Registry";
 import { AddModMail, AddModnote } from "../../../database/database";
 import { LogModMail, LogModnote } from "../../../services/logs";
 
+const messageTemplates : Record<string, string> = {
+    nickname: "Hello! This is just a friendly reminder that according to our server guidelines, we ask that users"
+    + "change their server nickname to match the name you prefer to be called in person. This is so that everyone"
+    + " can have an idea of who they are talking to! Please change your nickname accordingly. If you have any questions, feel free to DM this bot!",
+
+    verify: "Hello! I saw your message in #discord-registration . It seems that discord did not recognize you were typing a command-"
+    + " can you try typing /verify first, then pasting your verification code in the box that pops up? Feel free to DM this bot if you have any questions."
+}
+
+
 export async function hb_init() {
     RegisterCommand(command, execute);
 }
@@ -13,10 +23,26 @@ export const command = new SlashCommandBuilder()
     .addUserOption((option) => option.setName("user").setDescription("User to message").setRequired(true))
     .addStringOption((option) =>
         option
-            .setName("content")
-            .setDescription("Message content. This will be sent to the user.")
-            .setRequired(true)
+            .setName("template")
+            .setDescription("Choose prefilled message template.")
+            .setRequired(false)
+            .addChoices(
+                {
+                    name: "Change ur nickname pls",
+                    value: "nickname",
+                },
+                {
+                    name: "Verify gone wrong",
+                    value: "verify",
+                }
+            )
     )
+    .addStringOption((option) =>
+        option
+            .setName("content")
+            .setDescription("Custom message content to send to the user.")
+            .setRequired(false)
+        )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
 
 export async function execute(interaction: CommandInteraction) {
@@ -25,12 +51,25 @@ export async function execute(interaction: CommandInteraction) {
         return;
     }
 
+    const selectedTemplate = interaction.options.get("template")?.value as string | undefined;
+    const customMessage = interaction.options.get("content")?.value as string | undefined;
+
+    // Use the custom message if provided, otherwise use the prefilled template message
+    const content = customMessage?.trim() || (selectedTemplate? messageTemplates[selectedTemplate]: undefined);
+
+    if (!content) {
+        await interaction.reply({ 
+            content: "Please select a message template or provide a custom message.",
+            ephemeral: true
+        });
+        return;
+    }
+
     await interaction.deferReply({ ephemeral: true });
 
     const guild = interaction.guild;
     const issuer = interaction.member! as GuildMember;
     const target = interaction.options.get("user")!.member as GuildMember;
-    const content = interaction.options.get("content")!.value as string;
     const dm = await target.createDM().catch(error => {
         console.log(error);
         return null;
