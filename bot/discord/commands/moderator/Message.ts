@@ -5,7 +5,7 @@ import { LogModMail, LogModnote } from "../../../services/logs";
 
 const messageTemplates : Record<string, string> = {
     nickname: "Hello! This is just a friendly reminder that according to our server guidelines, we ask that users"
-    + "change their server nickname to match the name you prefer to be called in person. This is so that everyone"
+    + " change their server nickname to match the name you prefer to be called in person. This is so that everyone"
     + " can have an idea of who they are talking to! Please change your nickname accordingly. If you have any questions, feel free to DM this bot!",
 
     verify: "Hello! I saw your message in #discord-registration . It seems that discord did not recognize you were typing a command-"
@@ -39,7 +39,7 @@ export const command = new SlashCommandBuilder()
     )
     .addStringOption((option) =>
         option
-            .setName("content")
+            .setName("custom")
             .setDescription("Custom message content to send to the user.")
             .setRequired(false)
         )
@@ -52,7 +52,7 @@ export async function execute(interaction: CommandInteraction) {
     }
 
     const selectedTemplate = interaction.options.get("template")?.value as string | undefined;
-    const customMessage = interaction.options.get("content")?.value as string | undefined;
+    const customMessage = interaction.options.get("custom")?.value as string | undefined;
 
     // Use the custom message if provided, otherwise use the prefilled template message
     const content = customMessage?.trim() || (selectedTemplate? messageTemplates[selectedTemplate]: undefined);
